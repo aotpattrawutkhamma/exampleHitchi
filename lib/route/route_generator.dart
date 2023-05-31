@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hitachi/route/router_list.dart';
+import 'package:hitachi/screens/PMDaily/PMDaily_Control.dart';
 import 'package:hitachi/screens/filmreceive/filmreceive_control.dart';
 import 'package:hitachi/screens/lineElement/lineElementMenu_Screen.dart';
 import 'package:hitachi/screens/lineElement/materialInput/scan/materialInput_Screen.dart';
@@ -22,8 +23,9 @@ import 'package:hitachi/screens/lineElement/windingStart/hold/windingjobstart_Ho
 import 'package:hitachi/screens/lineElement/windingStart/windingStart_Control.dart';
 import 'package:hitachi/screens/machinebreackdown/mbd_control.dart';
 import 'package:hitachi/screens/mainMenu/Homepage.dart';
+import 'package:hitachi/screens/planWinding/PlanWinding_Control.dart';
 
-import 'package:hitachi/screens/planWinding/planwinding_Screen.dart';
+import 'package:hitachi/screens/planWinding/scan/planwinding_Screen.dart';
 import 'package:hitachi/screens/settingWeb/settingWeb_screen.dart';
 import 'package:hitachi/screens/zincthickness/zthnControl.dart';
 import 'package:page_transition/page_transition.dart';
@@ -97,10 +99,10 @@ class RouteGenerator {
             child: MaterialInputControlPage(),
             type: PageTransitionType.fade);
       //PlanWinding
-      case RouterList.Plan_winding:
+      case RouterList.Planwinding_control_Screen:
         return PageTransition(
             settings: settings,
-            child: PlanWinding_Screen(),
+            child: PlanWindingControl(),
             type: PageTransitionType.fade);
       //MachineBreakDown
       case RouterList.MachineBreakDown_control_Screen:
@@ -120,11 +122,18 @@ class RouteGenerator {
             settings: settings,
             child: ZincThicknessControl(),
             type: PageTransitionType.fade);
-      //ZincThickness
+      //SettingWeb
       case RouterList.Setting_web:
         return PageTransition(
             settings: settings,
             child: SettingWebScreen(),
+            type: PageTransitionType.fade);
+
+      //PMDaily
+      case RouterList.PMDaily_control_Screen:
+        return PageTransition(
+            settings: settings,
+            child: PMDailyControl(),
             type: PageTransitionType.fade);
     }
     throw UnsupportedError('Unknow route : ${settings.name}');

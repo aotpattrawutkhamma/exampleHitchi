@@ -36,6 +36,11 @@ class _ProblemPageState extends State<ProblemPage> {
     }
   }
 
+  Map<String, double> columnWidths = {
+    'Process': double.nan,
+    'des': double.nan,
+  };
+
   @override
   Widget build(BuildContext context) {
     return MultiBlocListener(
@@ -63,7 +68,6 @@ class _ProblemPageState extends State<ProblemPage> {
       ],
       child: BgWhite(
         isHideAppBar: true,
-        textTitle: "Report Route Sheet",
         body: Container(
           padding: EdgeInsets.all(15),
           child: Column(
@@ -78,9 +82,20 @@ class _ProblemPageState extends State<ProblemPage> {
                           headerGridLinesVisibility: GridLinesVisibility.both,
                           source: employeeDataSource!,
                           columnWidthMode: ColumnWidthMode.fill,
+                          allowColumnsResizing: true,
+                          onColumnResizeUpdate:
+                              (ColumnResizeUpdateDetails details) {
+                            setState(() {
+                              columnWidths[details.column.columnName] =
+                                  details.width;
+                              print(details.width);
+                            });
+                            return true;
+                          },
+                          columnResizeMode: ColumnResizeMode.onResizeEnd,
                           columns: [
                             GridColumn(
-                              width: 120,
+                              width: columnWidths['Process']!,
                               columnName: 'Process',
                               label: Container(
                                 color: COLOR_BLUE_DARK,
@@ -93,6 +108,7 @@ class _ProblemPageState extends State<ProblemPage> {
                               ),
                             ),
                             GridColumn(
+                              width: columnWidths['des']!,
                               columnName: 'des',
                               label: Container(
                                 color: COLOR_BLUE_DARK,

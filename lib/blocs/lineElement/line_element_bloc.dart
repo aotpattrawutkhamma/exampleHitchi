@@ -16,6 +16,7 @@ import 'package:hitachi/models/SendWds/sendWdsModel_input.dart';
 import 'package:hitachi/models/checkPackNo_Model.dart';
 import 'package:hitachi/models/materialInput/materialInputModel.dart';
 import 'package:hitachi/models/materialInput/materialOutputModel.dart';
+import 'package:hitachi/models/pmdailyModel/PMDailyOutputModel.dart';
 import 'package:hitachi/models/processFinish/processFinishInputModel.dart';
 import 'package:hitachi/models/processFinish/processFinishOutput.dart';
 import 'package:hitachi/models/processStart/processInputModel.dart';
@@ -139,10 +140,22 @@ class LineElementBloc extends Bloc<LineElementEvent, LineElementState> {
       (event, emit) async {
         try {
           emit(ProcessStartLoadingState());
-          final mlist = await fetchStartProcess(event.items);
+          final mlist = await fetchProcessStart(event.items);
           emit(ProcessStartLoadedState(mlist));
         } catch (e) {
           emit(ProcessStartErrorState(e.toString()));
+        }
+      },
+    );
+    //ProcessFinish
+    on<ProcessFinishInputEvent>(
+      (event, emit) async {
+        try {
+          emit(ProcessFinishLoadingState());
+          final mlist = await fetchProcessFinish(event.items);
+          emit(ProcessFinishLoadedState(mlist));
+        } catch (e) {
+          emit(ProcessFinishErrorState(e.toString()));
         }
       },
     );
@@ -155,10 +168,10 @@ class LineElementBloc extends Bloc<LineElementEvent, LineElementState> {
           ApiConfig.LE_SEND_WINDING_START_WEIGHT,
           options: Options(
               headers: ApiConfig.HEADER(),
-              sendTimeout: Duration(seconds: 3),
-              receiveTimeout: Duration(seconds: 3)),
+              sendTimeout: Duration(seconds: 120),
+              receiveTimeout: Duration(seconds: 120)),
           data: jsonEncode(item));
-      print(responese.data);
+
       sendWdsReturnWeightInputModel post =
           sendWdsReturnWeightInputModel.fromJson(responese.data);
       return post;
@@ -175,13 +188,13 @@ class LineElementBloc extends Bloc<LineElementEvent, LineElementState> {
       Response responese = await dio.post(ApiConfig.LE_SEND_WINDING_START,
           options: Options(
               headers: ApiConfig.HEADER(),
-              sendTimeout: Duration(seconds: 3),
-              receiveTimeout: Duration(seconds: 3)),
+              sendTimeout: Duration(seconds: 60),
+              receiveTimeout: Duration(seconds: 60)),
           data: jsonEncode(itemOutput));
-      print(responese.data);
+
       SendWindingStartModelInput post =
           SendWindingStartModelInput.fromJson(responese.data);
-      print(post.PACK_NO);
+
       return post;
     } catch (e, s) {
       print("Exception occured: $e StackTrace: $s");
@@ -198,8 +211,8 @@ class LineElementBloc extends Bloc<LineElementEvent, LineElementState> {
         ApiConfig.LE_SEND_WINDING_FINISH,
         options: Options(
             headers: ApiConfig.HEADER(),
-            sendTimeout: Duration(seconds: 3),
-            receiveTimeout: Duration(seconds: 3)),
+            sendTimeout: Duration(seconds: 60),
+            receiveTimeout: Duration(seconds: 60)),
         data: jsonEncode(itemOutput),
       );
 
@@ -221,10 +234,10 @@ class LineElementBloc extends Bloc<LineElementEvent, LineElementState> {
         ApiConfig.LE_CHECK_SEND_WINDING_FINISH + itemOutput,
         options: Options(
             headers: ApiConfig.HEADER(),
-            sendTimeout: Duration(seconds: 3),
-            receiveTimeout: Duration(seconds: 3)),
+            sendTimeout: Duration(seconds: 60),
+            receiveTimeout: Duration(seconds: 60)),
       );
-      print(responese.data);
+
       CheckWdsFinishInputModel post =
           CheckWdsFinishInputModel.fromJson(responese.data);
       return post;
@@ -235,14 +248,13 @@ class LineElementBloc extends Bloc<LineElementEvent, LineElementState> {
 
   //Check packNO
   Future<CheckPackNoModel> fetchCheckPackNo(int number) async {
-    print(ApiConfig.LE_CHECKPACK_NO);
     try {
       Response responese = await dio.get(ApiConfig.LE_CHECKPACK_NO + "$number",
           options: Options(
               headers: ApiConfig.HEADER(),
-              sendTimeout: Duration(seconds: 3),
-              receiveTimeout: Duration(seconds: 3)));
-
+              sendTimeout: Duration(seconds: 60),
+              receiveTimeout: Duration(seconds: 60)));
+      print(ApiConfig.LE_CHECKPACK_NO + "$number");
       CheckPackNoModel post = CheckPackNoModel.fromJson(responese.data);
 
       return post;
@@ -259,9 +271,10 @@ class LineElementBloc extends Bloc<LineElementEvent, LineElementState> {
         ApiConfig.LE_REPORT_ROUTE_SHEET + "$number",
         options: Options(
             headers: ApiConfig.HEADER(),
-            sendTimeout: Duration(seconds: 3),
-            receiveTimeout: Duration(seconds: 3)),
+            sendTimeout: Duration(seconds: 60),
+            receiveTimeout: Duration(seconds: 60)),
       );
+      print(ApiConfig.LE_REPORT_ROUTE_SHEET + "$number");
 
       ReportRouteSheetModel tmp = ReportRouteSheetModel.fromJson(response.data);
 
@@ -312,7 +325,7 @@ class LineElementBloc extends Bloc<LineElementEvent, LineElementState> {
   }
 
   //ProcessStart
-  Future<ProcessInputModel> fetchStartProcess(ProcessOutputModel items) async {
+  Future<ProcessInputModel> fetchProcessStart(ProcessOutputModel items) async {
     try {
       Response response = await dio.post(ApiConfig.LE_PROCESSSTARTINPUT,
           options: Options(
@@ -324,10 +337,9 @@ class LineElementBloc extends Bloc<LineElementEvent, LineElementState> {
       ProcessInputModel tmp = ProcessInputModel.fromJson(response.data);
       print(tmp);
       return tmp;
-    } catch (e, s) {
-      print(e);
-      print(s);
-      return ProcessInputModel();
+    } on Exception {
+      throw (Exception);
+      // return ProcessInputModel();
     }
   }
 

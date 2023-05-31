@@ -42,7 +42,6 @@ class TestconnectionBloc
   }
 
   Future<ResponeDefault> fetchTestConnection() async {
-    String _testUrl = '${TEMP_API_URL}Connection/TestConnection';
     try {
       Response responese = await dio.get(
         TEMP_API_URL + 'Connection/TestConnection',
@@ -51,7 +50,6 @@ class TestconnectionBloc
             sendTimeout: Duration(seconds: 3),
             receiveTimeout: Duration(seconds: 3)),
       );
-      print(_testUrl);
 
       ResponeDefault items = ResponeDefault.fromJson(responese.data);
       return items;

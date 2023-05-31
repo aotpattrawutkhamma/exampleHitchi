@@ -7,6 +7,7 @@ import 'package:hitachi/helper/background/bg_white.dart';
 import 'package:hitachi/helper/button/Button.dart';
 import 'package:hitachi/helper/colors/colors.dart';
 import 'package:hitachi/helper/text/label.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingWebScreen extends StatefulWidget {
   const SettingWebScreen({super.key});
@@ -17,12 +18,25 @@ class SettingWebScreen extends StatefulWidget {
 
 class _SettingWebScreenState extends State<SettingWebScreen> {
   final TextEditingController _urlController = TextEditingController();
-  String? _urltestConnect = BASE_API_URL;
+
+  String tempUrl = "https://dev.lvcap.th.hitachienergy.com/";
+
   Color _isColorSuccess = Colors.grey;
 
   @override
   void initState() {
+    _checkUrl();
     super.initState();
+  }
+
+  void _checkUrl() {
+    setState(() {
+      if (BASE_API_URL.isNotEmpty) {
+        _urlController.text = BASE_API_URL;
+      } else {
+        _urlController.text = tempUrl;
+      }
+    });
   }
 
   @override
@@ -34,6 +48,7 @@ class _SettingWebScreenState extends State<SettingWebScreen> {
             if (state is TestconnectionLoadingState) {
               EasyLoading.show();
             } else if (state is TestconnectionLoadedState) {
+              EasyLoading.dismiss();
               if (state.item.RESULT == true) {
                 EasyLoading.showSuccess("Connection Success");
                 setState(() {
@@ -53,7 +68,7 @@ class _SettingWebScreenState extends State<SettingWebScreen> {
         )
       ],
       child: BgWhite(
-          textTitle: "Setting Web",
+          textTitle: Label("Setting Web"),
           body: SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.only(left: 15, right: 15, top: 50),
@@ -101,11 +116,15 @@ class _SettingWebScreenState extends State<SettingWebScreen> {
                         flex: 4,
                         child: Button(
                           bgColor: _isColorSuccess,
-                          onPress: () {
+                          onPress: () async {
+                            SharedPreferences pre =
+                                await SharedPreferences.getInstance();
                             setState(() {
                               BASE_API_URL = TEMP_API_URL;
+                              pre.setString("API", BASE_API_URL);
                             });
-                            print(BASE_API_URL);
+
+                            // print(saveStringToSharedPreferences(BASE_API_URL));
                             EasyLoading.showSuccess("Save Complete");
                           },
                           text: Label(

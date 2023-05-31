@@ -19,10 +19,12 @@ import 'package:hitachi/models/sendWdsReturnWeight/sendWdsReturnWeight_Output_Mo
 import 'package:hitachi/route/router_list.dart';
 import 'package:hitachi/services/databaseHelper.dart';
 import 'package:intl/intl.dart';
+import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:sqflite/sqflite.dart';
 
 class WindingJobStartScanScreen extends StatefulWidget {
-  const WindingJobStartScanScreen({super.key});
+  WindingJobStartScanScreen({super.key, this.onChange});
+  ValueChanged<List<Map<String, dynamic>>>? onChange;
 
   @override
   State<WindingJobStartScanScreen> createState() =>
@@ -58,7 +60,7 @@ class _WindingJobStartScanScreenState extends State<WindingJobStartScanScreen> {
   //ModelSqltie
 
   num target = 0.0;
-  num weight = 0.0;
+  num _weight = 0.0;
   DateTime startDate = DateTime.now();
 //HelperDatabase
   DatabaseHelper databaseHelper = DatabaseHelper();
@@ -68,6 +70,7 @@ class _WindingJobStartScanScreenState extends State<WindingJobStartScanScreen> {
   @override
   void initState() {
     f1.requestFocus();
+    _getHold();
     super.initState();
   }
 
@@ -98,7 +101,7 @@ class _WindingJobStartScanScreenState extends State<WindingJobStartScanScreen> {
               FILM_PACK_NO: int.tryParse(
                 filmPackNoController.text.trim(),
               ),
-              MACHINE_NO: machineNoController.text.trim(),
+              MACHINE_NO: machineNoController.text.trim().toUpperCase(),
               OPERATOR_NAME: int.tryParse(
                 operatorNameController.text.trim(),
               ),
@@ -108,8 +111,9 @@ class _WindingJobStartScanScreenState extends State<WindingJobStartScanScreen> {
               PAPER_CODE_LOT: paperCodeLotController.text.trim(),
               PP_FILM_LOT: ppFilmLotController.text.trim(),
               FOIL_LOT: foilLotController.text.trim(),
-              WEIGHT: weight,
-              START_DATE: DateTime.now().toString()),
+              WEIGHT: _weight,
+              START_DATE:
+                  DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now())),
         ),
       );
       print(filmPackNoController.text.trim());
@@ -168,8 +172,8 @@ class _WindingJobStartScanScreenState extends State<WindingJobStartScanScreen> {
             bomp = double.parse(spec['BomP'].toString());
             bomp = double.parse(bomp.toStringAsFixed(2));
           }
-          target =
-              double.parse(((weight - sm - s1 - s2) / bomp).toStringAsFixed(2));
+          target = double.parse(
+              ((_weight - sm - s1 - s2) / bomp).toStringAsFixed(2));
         } else {
           target = weightValue!;
         }
@@ -177,7 +181,7 @@ class _WindingJobStartScanScreenState extends State<WindingJobStartScanScreen> {
         ///WriteDataTolocalTable WindingWeightSheet
         await databaseHelper.writeTableWindingWeightSheet_ToSqlite(
             machineNo: machineNoController.text.trim(),
-            batchNo: int.tryParse(batchNoController.text.trim()),
+            batchNo: batchNoController.text.toUpperCase(),
             target: target);
       } else {
         print("check3");
@@ -212,10 +216,10 @@ class _WindingJobStartScanScreenState extends State<WindingJobStartScanScreen> {
             bomp = double.parse(spec['BomP'].toString());
             bomp = double.parse(bomp.toStringAsFixed(2));
           }
-          target =
-              double.parse(((weight - sm - s1 - s2) / bomp).toStringAsFixed(2));
+          target = double.parse(
+              ((_weight - sm - s1 - s2) / bomp).toStringAsFixed(2));
         } else {
-          target = weight;
+          target = _weight;
         }
         print("check5");
         await databaseHelper.updateWindingWeight(
@@ -241,14 +245,14 @@ class _WindingJobStartScanScreenState extends State<WindingJobStartScanScreen> {
     }
   }
 
-  void okBtnWeight() async {
+  Future okBtnWeight() async {
     if (weight1Controller.text.trim().isNotEmpty &&
         weight2Controller.text.trim().isNotEmpty) {
       ///
       setState(() {
-        weight = num.parse(weight1Controller.text.trim()) +
+        _weight = num.parse(weight1Controller.text.trim()) +
             num.parse(weight2Controller.text.trim());
-        weight = num.parse(weight.toStringAsFixed(2));
+        _weight = num.parse(_weight.toStringAsFixed(2));
       });
 
       ///
@@ -262,16 +266,21 @@ class _WindingJobStartScanScreenState extends State<WindingJobStartScanScreen> {
           PP_CORE: ppFilmLotController.text.trim(),
           FOIL_CORE: foilLotController.text.trim(),
           BATCH_START_DATE: DateTime.now().toString(),
-          weight: weight);
+          weight: _weight);
 
-      EasyLoading.showSuccess("Save Weight Complete${weight}",
+      EasyLoading.showSuccess("Save Weight Complete\n Weight = ${_weight}",
           duration: Duration(seconds: 5));
+      await _getHold();
       f5.requestFocus();
       Navigator.pop(context);
     } else {
       EasyLoading.showError("Please Input  Info");
     }
   }
+
+  // Future _saveTarget() async {
+
+  // }
 
   Future<bool> _SaveWindingStartWithWeight({
     String? MACHINE_NO,
@@ -311,9 +320,9 @@ class _WindingJobStartScanScreenState extends State<WindingJobStartScanScreen> {
           'PPCore': PP_CORE,
           'FoilCore': FOIL_CORE,
           'BatchStartDate':
-              DateFormat('dd MMM yyyy HH:mm').format(DateTime.now()),
+              DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
           'Status': 'P',
-          'start_end': DateFormat('dd MMM yyyy HH:mm').format(DateTime.now()),
+          'start_end': DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
           'checkComplete': '0'
         });
       }
@@ -323,7 +332,7 @@ class _WindingJobStartScanScreenState extends State<WindingJobStartScanScreen> {
           select2: 'MachineNo',
           formTable: 'WINDING_WEIGHT_SHEET',
           where: 'MachineNo',
-          stringValue: MACHINE_NO);
+          stringValue: machineNoController.text.trim());
 
       //Not Sure
       if (sql_machine.length <= 0) {
@@ -362,8 +371,11 @@ class _WindingJobStartScanScreenState extends State<WindingJobStartScanScreen> {
         } else {
           target = weight!;
         }
-        await databaseHelper.insertSqlite('WINDING_WEIGHT_SHEET',
-            {'MachineNo': MACHINE_NO, 'BatchNo': BATCH_NO, 'Target': target});
+        await databaseHelper.insertSqlite('WINDING_WEIGHT_SHEET', {
+          'MachineNo': machineNoController.text.trim(),
+          'BatchNo': batchNoController.text.trim(),
+          'Target': items!.TARGET ?? "0"
+        });
       } else {
         var sql_specification = await databaseHelper.queryDataSelect(
             select1: 'SM',
@@ -403,11 +415,11 @@ class _WindingJobStartScanScreenState extends State<WindingJobStartScanScreen> {
         await databaseHelper.updateWindingWeight(
             table: 'WINDING_WEIGHT_SHEET',
             key1: 'BatchNo',
-            yieldKey1: BATCH_NO,
+            yieldKey1: batchNoController.text.trim(),
             key2: 'Target',
-            yieldKey2: target,
+            yieldKey2: items!.TARGET ?? 0,
             whereKey: 'MachineNo',
-            value: MACHINE_NO);
+            value: machineNoController.text.trim());
       }
 
       return true;
@@ -426,8 +438,16 @@ class _WindingJobStartScanScreenState extends State<WindingJobStartScanScreen> {
       BlocProvider.of<LineElementBloc>(context).add(
         GetCheckPackNoEvent(result),
       );
-      f6.requestFocus();
     }
+  }
+
+  Future _getHold() async {
+    List<Map<String, dynamic>> sql =
+        await databaseHelper.queryAllRows('WINDING_SHEET');
+    setState(() {
+      widget.onChange
+          ?.call(sql.where((element) => element['Status'] == 'P').toList());
+    });
   }
 
   @override
@@ -438,7 +458,6 @@ class _WindingJobStartScanScreenState extends State<WindingJobStartScanScreen> {
       },
       child: BgWhite(
         isHideAppBar: true,
-        textTitle: "Winding Job Start",
         body: Form(
           autovalidateMode: AutovalidateMode.always,
           child: Padding(
@@ -446,9 +465,9 @@ class _WindingJobStartScanScreenState extends State<WindingJobStartScanScreen> {
             child: MultiBlocListener(
                 listeners: [
                   BlocListener<LineElementBloc, LineElementState>(
-                      listener: (context, state) {
+                      listener: (context, state) async {
                     if (state is PostSendWindingStartReturnWeightLoadingState) {
-                      print(weight);
+                      print(_weight);
                       EasyLoading.show(status: "Loading...");
                     } else if (state
                         is PostSendWindingStartReturnWeightLoadedState) {
@@ -457,27 +476,27 @@ class _WindingJobStartScanScreenState extends State<WindingJobStartScanScreen> {
                         items = state.item;
                       });
                       if (items!.RESULT == true) {
-                        _saveWindingStartOnlyWeight(weightValue: items!.WEIGHT);
-                        showDialog<String>(
-                            context: context,
-                            builder: (BuildContext context) => AlertDialog(
-                                  backgroundColor: COLOR_WHITE,
-                                  content: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Label("Target :${items!.WEIGHT}")
-                                    ],
-                                  ),
-                                  actions: <Widget>[
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context),
-                                      child: Label('OK'),
-                                    ),
-                                  ],
-                                ));
+                        // await _saveTarget();
+                        await _saveWindingStartOnlyWeight(
+                            weightValue: items!.TARGET);
+                        Alert(
+                          context: context,
+                          type: AlertType.success,
+                          title: "Send Complete",
+                          desc: "Target: ${items!.TARGET!.toStringAsFixed(0)}",
+                          buttons: [
+                            DialogButton(
+                              child: Text(
+                                "OK",
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 20),
+                              ),
+                              onPressed: () => Navigator.pop(context),
+                              width: 120,
+                            )
+                          ],
+                        ).show();
+
                         machineNoController.clear();
                         operatorNameController.clear();
                         batchNoController.clear();
@@ -486,14 +505,18 @@ class _WindingJobStartScanScreenState extends State<WindingJobStartScanScreen> {
                         paperCodeLotController.clear();
                         ppFilmLotController.clear();
                         foilLotController.clear();
+                        f1.requestFocus();
                         setState(() {
                           bgColor = Colors.grey;
                         });
-                        EasyLoading.showSuccess(items!.MESSAGE!);
                       } else {
-                        EasyLoading.showInfo(" Please Input Weight",
-                            duration: Duration(seconds: 1));
-                        _showpopUpWeight();
+                        _errorDialog(
+                            text: Label(
+                                "${state.item.MESSAGE ?? "Check Connection\n Do you want to save data "}"),
+                            onpressOk: () {
+                              Navigator.pop(context);
+                              _showpopUpWeight();
+                            });
                       }
                     }
                     if (state is PostSendWindingStartReturnWeightErrorState) {
@@ -502,67 +525,72 @@ class _WindingJobStartScanScreenState extends State<WindingJobStartScanScreen> {
                     if (state is GetCheckPackLoadingState) {
                       EasyLoading.show();
                     } else if (state is GetCheckPackLoadedState) {
+                      EasyLoading.dismiss();
                       setState(() {
                         packNoModel = state.item;
                       });
                       if (packNoModel!.RESULT == true) {
                         EasyLoading.dismiss();
-                        EasyLoading.showSuccess("Success");
+                        f6.requestFocus();
                       } else {
-                        print("object");
-                        EasyLoading.showError("${packNoModel?.MESSAGE}");
+                        _errorDialog(
+                            text: Label("${packNoModel?.MESSAGE}"),
+                            onpressOk: () {
+                              Navigator.pop(context);
+                              f6.requestFocus();
+                            });
+
                         setState(() {
-                          bgColor = COLOR_SUCESS;
+                          bgColor = COLOR_BLUE_DARK;
                         });
                       }
                     }
                     if (state is GetCheckPackErrorState) {
-                      EasyLoading.showError("Check Connection");
+                      f6.requestFocus();
+                      EasyLoading.dismiss();
                     }
-                    // if (state is PostSendWindingStartLoadingState) {
-                    //   EasyLoading.show();
-                    // } else if (state is PostSendWindingStartLoadedState) {
-                    //   EasyLoading.dismiss();
-                    //   if (state.item.RESULT == true) {
-                    //     Navigator.pop(context);
-
-                    //     EasyLoading.showSuccess("Send complete",
-                    //         duration: Duration(seconds: 3));
-                    //   } else {
-                    //     EasyLoading.showError("Please Check Data");
-                    //   }
-                    // } else {
-                    //   EasyLoading.dismiss();
-                    //   EasyLoading.showError("Please Check Connection Internet");
-                    // }
                   })
                 ],
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      BoxInputField(
-                        focusNode: f1,
-                        labelText: "Machine No :",
-                        controller: machineNoController,
-                        maxLength: 3,
-                        onEditingComplete: () {
-                          if (machineNoController.text.length == 3) {
-                            f2.requestFocus();
-                          }
-                        },
-                      ),
-                      SizedBox(
-                        height: 5,
-                      ),
-                      BoxInputField(
-                        focusNode: f2,
-                        labelText: "Operator Name :",
-                        controller: operatorNameController,
-                        type: TextInputType.number,
-                        textInputFormatter: [
-                          FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 6,
+                            child: BoxInputField(
+                              focusNode: f1,
+                              labelText: "Machine No :",
+                              controller: machineNoController,
+                              maxLength: 3,
+                              onEditingComplete: () {
+                                if (machineNoController.text.length == 3) {
+                                  f2.requestFocus();
+                                }
+                              },
+                            ),
+                          ),
+                          const Expanded(
+                            child: SizedBox(
+                              height: 5,
+                            ),
+                          ),
+                          Expanded(
+                            flex: 7,
+                            child: BoxInputField(
+                              focusNode: f2,
+                              labelText: "Operator :",
+                              controller: operatorNameController,
+                              type: TextInputType.number,
+                              textInputFormatter: [
+                                FilteringTextInputFormatter.allow(
+                                  RegExp(r'^(?!.*\d{12})[a-zA-Z0-9]+$'),
+                                ),
+                              ],
+                              onEditingComplete: () => f3.requestFocus(),
+                            ),
+                          ),
                         ],
-                        onEditingComplete: () => f3.requestFocus(),
                       ),
                       SizedBox(
                         height: 5,
@@ -658,45 +686,33 @@ class _WindingJobStartScanScreenState extends State<WindingJobStartScanScreen> {
                       SizedBox(
                         height: 5,
                       ),
-                      Row(
-                        children: [
-                          Expanded(
-                            flex: 5,
-                            child: BoxInputField(
-                              focusNode: f7,
-                              onEditingComplete: () => f8.requestFocus(),
-                              labelText: "PP Film Lot :",
-                              controller: ppFilmLotController,
-                            ),
-                          ),
-                          Expanded(
-                            child: SizedBox(
-                              height: 5,
-                            ),
-                          ),
-                          Expanded(
-                            flex: 5,
-                            child: BoxInputField(
-                              focusNode: f8,
-                              onEditingComplete: () {
-                                _btnSendClick();
-                              },
-                              labelText: "Foil Lot:",
-                              controller: foilLotController,
-                              onChanged: (value) {
-                                if (value.isNotEmpty) {
-                                  setState(() {
-                                    bgColor = COLOR_SUCESS;
-                                  });
-                                } else {
-                                  setState(() {
-                                    bgColor = Colors.grey;
-                                  });
-                                }
-                              },
-                            ),
-                          ),
-                        ],
+                      BoxInputField(
+                        focusNode: f7,
+                        onEditingComplete: () => f8.requestFocus(),
+                        labelText: "PP Film Lot :",
+                        controller: ppFilmLotController,
+                      ),
+                      SizedBox(
+                        height: 5,
+                      ),
+                      BoxInputField(
+                        focusNode: f8,
+                        onEditingComplete: () {
+                          _btnSendClick();
+                        },
+                        labelText: "Foil Lot:",
+                        controller: foilLotController,
+                        onChanged: (value) {
+                          if (value.isNotEmpty) {
+                            setState(() {
+                              bgColor = COLOR_BLUE_DARK;
+                            });
+                          } else {
+                            setState(() {
+                              bgColor = Colors.grey;
+                            });
+                          }
+                        },
                       ),
                       SizedBox(
                         height: 5,
@@ -813,8 +829,9 @@ class _WindingJobStartScanScreenState extends State<WindingJobStartScanScreen> {
                               FilteringTextInputFormatter.allow(
                                   RegExp(r'^\d*\.?\d*$')),
                             ],
-                            onEditingComplete: () {
-                              okBtnWeight();
+                            onEditingComplete: () async {
+                              await okBtnWeight();
+                              await _getHold();
                             },
                             controller: weight2Controller,
                             decoration:
@@ -856,8 +873,20 @@ class _WindingJobStartScanScreenState extends State<WindingJobStartScanScreen> {
                             "OK",
                             color: COLOR_WHITE,
                           ),
-                          onPress: () {
-                            okBtnWeight();
+                          onPress: () async {
+                            await okBtnWeight();
+                            machineNoController.clear();
+                            operatorNameController.clear();
+                            batchNoController.clear();
+                            productController.clear();
+                            filmPackNoController.clear();
+                            paperCodeLotController.clear();
+                            ppFilmLotController.clear();
+                            foilLotController.clear();
+                            f1.requestFocus();
+                            setState(() {
+                              bgColor = Colors.grey;
+                            });
                           },
                         ),
                       ),
@@ -868,5 +897,58 @@ class _WindingJobStartScanScreenState extends State<WindingJobStartScanScreen> {
             ],
           );
         });
+  }
+
+  void _errorDialog(
+      {Label? text,
+      Function? onpressOk,
+      Function? onpressCancel,
+      bool isHideCancle = true}) async {
+    // EasyLoading.showError("Error[03]", duration: Duration(seconds: 5));//if password
+    showDialog<String>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        // title: const Text('AlertDialog Title'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: text,
+            ),
+          ],
+        ),
+
+        actions: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Visibility(
+                visible: isHideCancle,
+                child: ElevatedButton(
+                  style: ButtonStyle(
+                      backgroundColor:
+                          MaterialStatePropertyAll(COLOR_BLUE_DARK)),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+              ),
+              Visibility(
+                visible: isHideCancle,
+                child: SizedBox(
+                  width: 15,
+                ),
+              ),
+              ElevatedButton(
+                style: ButtonStyle(
+                    backgroundColor: MaterialStatePropertyAll(COLOR_BLUE_DARK)),
+                onPressed: () => onpressOk?.call(),
+                child: const Text('OK'),
+              ),
+            ],
+          )
+        ],
+      ),
+    );
   }
 }

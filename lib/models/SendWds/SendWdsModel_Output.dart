@@ -11,24 +11,24 @@ class SendWindingStartModelOutput {
       this.START_DATE});
   final String? MACHINE_NO;
   final int? OPERATOR_NAME;
-  final int? BATCH_NO;
+  final String? BATCH_NO;
   final int? PRODUCT;
   final int? FILM_PACK_NO;
   final String? PAPER_CODE_LOT;
   final String? PP_FILM_LOT;
   final String? FOIL_LOT;
-  final DateTime? START_DATE;
+  final String? START_DATE;
 
   SendWindingStartModelOutput copyWith({
     String? MACHINE_NO,
     int? OPERATOR_NAME,
-    int? BATCH_NO,
+    String? BATCH_NO,
     int? PRODUCT,
     int? FILM_PACK_NO,
     String? PAPER_CODE_LOT,
     String? PP_FILM_LOT,
     String? FOIL_LOT,
-    DateTime? START_DATE,
+    String? START_DATE,
   }) {
     return SendWindingStartModelOutput(
       MACHINE_NO: MACHINE_NO ?? this.MACHINE_NO,

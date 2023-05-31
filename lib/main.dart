@@ -6,6 +6,8 @@ import 'package:hitachi/blocs/filmReceive/film_receive_bloc.dart';
 
 import 'package:hitachi/blocs/lineElement/line_element_bloc.dart';
 import 'package:hitachi/blocs/machineBreakDown/machine_break_down_bloc.dart';
+import 'package:hitachi/blocs/planwinding/planwinding_bloc.dart';
+import 'package:hitachi/blocs/pmDaily/pm_daily_bloc.dart';
 import 'package:hitachi/blocs/treatment/treatment_bloc.dart';
 import 'package:hitachi/blocs/zincthickness/zinc_thickness_bloc.dart';
 import 'package:hitachi/helper/text/label.dart';
@@ -17,6 +19,7 @@ import 'package:hitachi/screens/splash_screen.dart';
 import 'package:hitachi/services/databaseHelper.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
@@ -43,7 +46,13 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider<TestconnectionBloc>(
           create: (_) => TestconnectionBloc(),
-        )
+        ),
+        BlocProvider<PmDailyBloc>(
+          create: (_) => PmDailyBloc(),
+        ),
+        BlocProvider<PlanWindingBloc>(
+          create: (_) => PlanWindingBloc(),
+        ),
       ],
       child: MaterialApp(
           builder: EasyLoading.init(),

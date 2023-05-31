@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:hitachi/helper/background/bg_white.dart';
 import 'package:hitachi/helper/colors/colors.dart';
+import 'package:hitachi/helper/text/label.dart';
 import 'package:hitachi/screens/lineElement/windingFinish/hold/windingJobFinish_hold_screen.dart';
 import 'package:hitachi/screens/lineElement/windingFinish/scan/windingjobFinish_screen.dart';
+import 'package:hitachi/services/databaseHelper.dart';
+
+import '../../../config.dart';
 
 class WindingFinishControlPage extends StatefulWidget {
   const WindingFinishControlPage({super.key});
@@ -13,23 +17,57 @@ class WindingFinishControlPage extends StatefulWidget {
 }
 
 class _WindingFinishControlPageState extends State<WindingFinishControlPage> {
-  @override
+  List<Map<String, dynamic>> listHoldWindingFinish = [];
   int _selectedIndex = 0;
+  DatabaseHelper databaseHelper = DatabaseHelper();
+
+  @override
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
   }
 
-  List<Widget> widgetOptions = [
-    WindingJobFinishScreen(),
-    WindingJobFinishHoldScreen()
-  ];
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
+    List<Widget> widgetOptions = [
+      WindingJobFinishScreen(
+        onChange: (value) {
+          setState(() {
+            listHoldWindingFinish = value;
+          });
+        },
+      ),
+      WindingJobFinishHoldScreen(
+        onChange: (value) {
+          setState(() {
+            listHoldWindingFinish = value;
+          });
+        },
+      )
+    ];
     return BgWhite(
-      textTitle: "WindingFinish",
+      textTitle: Padding(
+        padding: const EdgeInsets.only(right: 45),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Label("Winding Finish"),
+            SizedBox(
+              width: 10,
+            ),
+            Label(
+              "-${listHoldWindingFinish.length ?? 0}-",
+              color: COLOR_RED,
+            )
+          ],
+        ),
+      ),
       body: Center(
         child: widgetOptions.elementAt(_selectedIndex),
       ),

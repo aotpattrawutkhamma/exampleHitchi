@@ -4,12 +4,12 @@ class MachineBreakDownOutputModel {
     this.OPERATOR_NAME,
     this.SERVICE,
     this.BREAK_START_DATE,
-    this.TECH1,
-    this.START_DATE_TECH_1,
-    this.TECH2,
-    this.START_DATE_TECH_2,
-    this.STOP_TECH_DATE_1,
-    this.STOP_TECH_DATE_2,
+    this.MT1,
+    this.MT1_START_DATE,
+    this.MT2,
+    this.MT2_START_DATE,
+    this.MT1_STOP,
+    this.MT2_STOP,
     this.ACCEPT,
     this.BREAK_STOP_DATE,
   });
@@ -17,12 +17,12 @@ class MachineBreakDownOutputModel {
   final String? OPERATOR_NAME;
   final String? SERVICE;
   final String? BREAK_START_DATE;
-  final String? TECH1;
-  final String? START_DATE_TECH_1;
-  final String? TECH2;
-  final String? START_DATE_TECH_2;
-  final String? STOP_TECH_DATE_1;
-  final String? STOP_TECH_DATE_2;
+  final String? MT1;
+  final String? MT1_START_DATE;
+  final String? MT2;
+  final String? MT2_START_DATE;
+  final String? MT1_STOP;
+  final String? MT2_STOP;
   final String? ACCEPT;
   final String? BREAK_STOP_DATE;
 
@@ -45,12 +45,12 @@ class MachineBreakDownOutputModel {
       OPERATOR_NAME: OPERATOR_NAME ?? this.OPERATOR_NAME,
       SERVICE: SERVICE ?? this.SERVICE,
       BREAK_START_DATE: BREAK_START_DATE ?? this.BREAK_START_DATE,
-      TECH1: TECH1 ?? this.TECH1,
-      START_DATE_TECH_1: START_DATE_TECH_1 ?? this.START_DATE_TECH_1,
-      TECH2: TECH2 ?? this.TECH2,
-      START_DATE_TECH_2: START_DATE_TECH_2 ?? this.START_DATE_TECH_2,
-      STOP_TECH_DATE_1: STOP_TECH_DATE_1 ?? this.STOP_TECH_DATE_1,
-      STOP_TECH_DATE_2: STOP_TECH_DATE_2 ?? this.STOP_TECH_DATE_2,
+      MT1: TECH1 ?? this.MT1,
+      MT1_START_DATE: START_DATE_TECH_1 ?? this.MT1_START_DATE,
+      MT2: TECH2 ?? this.MT2,
+      MT2_START_DATE: START_DATE_TECH_2 ?? this.MT2_START_DATE,
+      MT1_STOP: STOP_TECH_DATE_1 ?? this.MT1_STOP,
+      MT2_STOP: STOP_TECH_DATE_2 ?? this.MT2_STOP,
       ACCEPT: ACCEPT ?? this.ACCEPT,
       BREAK_STOP_DATE: BREAK_STOP_DATE ?? this.BREAK_STOP_DATE,
     );
@@ -62,12 +62,12 @@ class MachineBreakDownOutputModel {
         'CallUser': OPERATOR_NAME,
         'RepairNo': SERVICE,
         'BreakStartDate': BREAK_START_DATE,
-        'MT1': TECH1,
-        'MT1StartDate': START_DATE_TECH_1,
-        'MT2': TECH2,
-        'MT2StartDate': START_DATE_TECH_2,
-        'MT1StopDate': STOP_TECH_DATE_1,
-        'MT2StopDate': STOP_TECH_DATE_2,
+        'MT1': MT1,
+        'MT1StartDate': MT1_START_DATE,
+        'MT2': MT2,
+        'MT2StartDate': MT2_START_DATE,
+        'MT1StopDate': MT1_STOP,
+        'MT2StopDate': MT2_STOP,
         'CheckUser': ACCEPT,
         'BreakStopDate': BREAK_STOP_DATE,
       };

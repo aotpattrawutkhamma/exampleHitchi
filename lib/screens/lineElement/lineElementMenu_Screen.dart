@@ -16,7 +16,7 @@ class _LineElementScreenState extends State<LineElementScreen> {
   Widget build(BuildContext context) {
     return BgWhite(
       isHideTitle: false,
-      textTitle: "Line Element : Menu",
+      textTitle: Label("Line Element : Menu"),
       body: GridView.count(
         primary: false,
         padding: const EdgeInsets.all(20),

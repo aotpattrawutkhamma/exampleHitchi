@@ -60,16 +60,21 @@ class ApiConfig {
   static String LE_PROCESSSTARTINPUT =
       "${BASE_API_URL}LineElement/SendProcessStart";
 
+  ///---------------------ProcessFinish ----------------------///
   //POST ProcessFinish
   static String LE_PROCESSFINISHINPUT =
       "${BASE_API_URL}LineElement/SendProcessFinish";
 
+  ///---------------------PROCESS BREAKDOWN ----------------------///
   //POST PROCESS BREAKDOWN
   static String PROCESS_BREAKDOWN =
       "${BASE_API_URL}LineElement/SendProcessStart";
 
   //POST SEND FILM IN
   static String FILM_RECEIVE = "${BASE_API_URL}LineElement/SendFilmIn";
+  //POST GETCHECK FILM IN
+  static String CHECK_FILM_RECEIVE =
+      "${BASE_API_URL}LineElement/FICheckPackNo?packNo="; //ID
   //POST SEND TreatmentStart
   static String TREAMTMENT_START = "${BASE_API_URL}LineElement/SendTreatStart";
   //POST SEND TreatmentFinish
@@ -79,4 +84,16 @@ class ApiConfig {
   static String ZINC_THICKNESS = "${BASE_API_URL}LineElement/SendZinc";
   //POST SEND TestConnection
   static String TEST_CONNECTION = "${BASE_API_URL}Connection/TestConnection";
+
+  ///---------------------PM Daily ----------------------///
+
+  //POST SEND PM_DAILY
+  static String PM_DAILY = "${BASE_API_URL}LineElement/SendPMDaily";
+  //Get PM_DAILY
+  static String PM_GETDAILY = "${BASE_API_URL}LineElement/GetLoadStatus";
+
+  ///---------------------PLAN_WINDING ----------------------///
+
+  //Get PLAN_WINDING
+  static String PLAN_WINDING = "${BASE_API_URL}LineElement/GetPlanWinding";
 }

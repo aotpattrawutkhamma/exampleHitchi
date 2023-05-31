@@ -15,3 +15,12 @@ class FilmReceiveSendEvent extends FilmReceiveEvent {
   @override
   List<Object> get prop => [items];
 }
+
+class FilmReceiveCheckEvent extends FilmReceiveEvent {
+  const FilmReceiveCheckEvent(this.items);
+
+  final String items;
+
+  @override
+  List<Object> get prop => [items];
+}

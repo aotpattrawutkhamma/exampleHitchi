@@ -1,21 +1,24 @@
 class BreakDownSheetModel {
-  const BreakDownSheetModel(
-      {this.BREAK_START_DATE,
-      this.BREAK_STOP_DATE,
-      this.CHECK_COMPLETE,
-      this.ID,
-      this.MACHINE_NO,
-      this.OPERATOR_ACCEPT,
-      this.OPERATOR_NAME,
-      this.SERVICE_NO,
-      this.START_TECH_DATE_1,
-      this.START_TECH_DATE_2,
-      this.TECH_1,
-      this.TECH_2,
-      this.STOP_DATE_TECH_1,
-      this.STOP_DATE_TECH_2,
-      this.NEW});
-  final String? ID;
+  const BreakDownSheetModel({
+    this.BREAK_START_DATE,
+    this.BREAK_STOP_DATE,
+    this.CHECK_COMPLETE,
+    this.ID,
+    this.MACHINE_NO,
+    this.OPERATOR_ACCEPT,
+    this.OPERATOR_NAME,
+    this.SERVICE_NO,
+    this.START_TECH_DATE_1,
+    this.START_TECH_DATE_2,
+    this.TECH_1,
+    this.TECH_2,
+    this.STOP_DATE_TECH_1,
+    this.STOP_DATE_TECH_2,
+    this.NEW,
+    this.STOPTECH_1,
+    this.STOPTECH_2,
+  });
+  final int? ID;
   final String? MACHINE_NO;
   final String? OPERATOR_NAME;
   final String? SERVICE_NO;
@@ -23,6 +26,8 @@ class BreakDownSheetModel {
   final String? TECH_1;
   final String? START_TECH_DATE_1;
   final String? TECH_2;
+  final String? STOPTECH_1;
+  final String? STOPTECH_2;
   final String? START_TECH_DATE_2;
   final String? STOP_DATE_TECH_1;
   final String? STOP_DATE_TECH_2;
@@ -32,6 +37,8 @@ class BreakDownSheetModel {
   final String? NEW;
 
   List<Object> get props => [
+        STOPTECH_1!,
+        STOPTECH_2!,
         ID!,
         MACHINE_NO!,
         OPERATOR_NAME!,
@@ -63,5 +70,7 @@ class BreakDownSheetModel {
         OPERATOR_ACCEPT = map['CheckUser'],
         BREAK_STOP_DATE = map['BreakStopDate'],
         CHECK_COMPLETE = map['CheckComplete'],
-        NEW = map[''];
+        NEW = map[''],
+        STOPTECH_1 = map['MT1StopName'],
+        STOPTECH_2 = map['MT2StopName'];
 }

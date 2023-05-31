@@ -14,6 +14,8 @@ import 'package:hitachi/models/materialInput/materialOutputModel.dart';
 import 'package:hitachi/models/reportRouteSheet/reportRouteSheetModel.dart';
 import 'package:hitachi/route/router_list.dart';
 import 'package:hitachi/services/databaseHelper.dart';
+import 'package:hitachi/utils/build_info.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class MainMenuScreen extends StatefulWidget {
   const MainMenuScreen({super.key});
@@ -24,12 +26,28 @@ class MainMenuScreen extends StatefulWidget {
 
 class _MainMenuScreenState extends State<MainMenuScreen> {
   DatabaseHelper databaseHelper = DatabaseHelper();
-  int batch = 100136982104;
+  PackageInfo _packageInfo = PackageInfo(
+    appName: 'Unknown',
+    packageName: 'Unknown',
+    version: 'Unknown',
+    buildNumber: 'Unknown',
+    buildSignature: 'Unknown',
+    installerStore: 'Unknown',
+  );
+
   ReportRouteSheetModel? items;
 
   @override
   void initState() {
+    _initPackageInfo();
     super.initState();
+  }
+
+  Future<void> _initPackageInfo() async {
+    final info = await PackageInfo.fromPlatform();
+    setState(() {
+      _packageInfo = info;
+    });
   }
 
   @override
@@ -40,7 +58,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
       },
       child: BgWhite(
         isHidePreviour: true,
-        textTitle: "Element : Main Menu",
+        textTitle: Label("Element : Main Menu"),
         body: Padding(
           padding:
               const EdgeInsets.only(top: 0, bottom: 10, right: 10, left: 10),
@@ -58,8 +76,8 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                   ),
                   CardButton(
                     text: "2.Plan Winding",
-                    onPress: () =>
-                        Navigator.pushNamed(context, RouterList.Plan_winding),
+                    onPress: () => Navigator.pushNamed(
+                        context, RouterList.Planwinding_control_Screen),
                   ),
                   SizedBox(
                     height: 15,
@@ -74,8 +92,10 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                   ),
                   CardButton(
                     text: "4.PM Daily",
-                    onPress: () => print("test2"),
+                    onPress: () => Navigator.pushNamed(
+                        context, RouterList.PMDaily_control_Screen),
                   ),
+                  // PMDaily_control_Screen
                   SizedBox(
                     height: 15,
                   ),
@@ -96,11 +116,10 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                     height: 15,
                   ),
                   CardButton(
-                    color: COLOR_SUCESS,
+                    color: COLOR_BLUE_DARK,
                     textAlign: TextAlign.center,
                     text: "Setting Web",
-                    colortext: COLOR_BLUE_DARK,
-                    fontWeight: FontWeight.bold,
+                    colortext: COLOR_WHITE,
                     onPress: () =>
                         Navigator.pushNamed(context, RouterList.Setting_web),
                   ),
@@ -112,6 +131,18 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                     text: "ExitApp",
                     onPress: () => showExitPopup(context),
                   ),
+                  SizedBox(
+                    height: 15,
+                  ),
+                  Label(
+                    "Version ${_packageInfo.version} (${_packageInfo.buildNumber}) ",
+                    fontSize: 20,
+                    color: Colors.grey,
+                  ),
+                  Label(
+                    "Date Modified : 31-May-2023",
+                    color: Colors.grey,
+                  )
                 ],
               ),
             ),

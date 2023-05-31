@@ -18,7 +18,7 @@ class DataSheetTableModel {
     this.ROLL_NO,
     this.CHECK_COMPLETE,
   });
-  final String? ID;
+  final int? ID;
   final String? PO_NO;
   final String? IN_VOICE;
   final String? FRIEGHT;

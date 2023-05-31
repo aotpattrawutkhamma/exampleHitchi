@@ -27,11 +27,23 @@ class _ProcessPageState extends State<ProcessPage> {
   String? originalValue;
   String trimmedValue = "";
   String valueCon = "456456";
+  final f1 = FocusNode();
   @override
   void initState() {
+    f1.requestFocus();
     batchNoController.text = widget.receiveValue ?? "";
     super.initState();
   }
+
+  Map<String, double> columnWidths = {
+    'id': double.nan,
+    'proc': double.nan,
+    'qty': double.nan,
+    'startDate': double.nan,
+    'startTime': double.nan,
+    'EndDate': double.nan,
+    'EndTime': double.nan,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +64,8 @@ class _ProcessPageState extends State<ProcessPage> {
             }
             if (state is GetReportRuteSheetErrorState) {
               EasyLoading.dismiss();
-              EasyLoading.showError("Check Connection");
+              EasyLoading.showError("Check Connection",
+                  duration: Duration(seconds: 5));
               print(state.error);
             }
           },
@@ -60,13 +73,13 @@ class _ProcessPageState extends State<ProcessPage> {
       ],
       child: BgWhite(
         isHideAppBar: true,
-        textTitle: "Report Route Sheet",
         body: Container(
           padding: EdgeInsets.all(15),
           child: Column(
             children: [
               Container(
                 child: BoxInputField(
+                  focusNode: f1,
                   labelText: "Batch No",
                   type: TextInputType.number,
                   maxLength: 12,
@@ -104,9 +117,20 @@ class _ProcessPageState extends State<ProcessPage> {
                           headerGridLinesVisibility: GridLinesVisibility.both,
                           source: employeeDataSource!,
                           columnWidthMode: ColumnWidthMode.fill,
+                          allowColumnsResizing: true,
+                          onColumnResizeUpdate:
+                              (ColumnResizeUpdateDetails details) {
+                            setState(() {
+                              columnWidths[details.column.columnName] =
+                                  details.width;
+                              print(details.width);
+                            });
+                            return true;
+                          },
+                          columnResizeMode: ColumnResizeMode.onResizeEnd,
                           columns: [
                             GridColumn(
-                              width: 120,
+                              width: columnWidths['id']!,
                               columnName: 'id',
                               label: Container(
                                 color: COLOR_BLUE_DARK,
@@ -119,6 +143,7 @@ class _ProcessPageState extends State<ProcessPage> {
                               ),
                             ),
                             GridColumn(
+                              width: columnWidths['proc']!,
                               columnName: 'proc',
                               label: Container(
                                 color: COLOR_BLUE_DARK,
@@ -131,6 +156,7 @@ class _ProcessPageState extends State<ProcessPage> {
                               ),
                             ),
                             GridColumn(
+                              width: columnWidths['qty']!,
                               columnName: 'qty',
                               label: Container(
                                 color: COLOR_BLUE_DARK,
@@ -143,7 +169,7 @@ class _ProcessPageState extends State<ProcessPage> {
                               ),
                             ),
                             GridColumn(
-                              width: 120,
+                              width: columnWidths['startDate']!,
                               columnName: 'startDate',
                               label: Container(
                                 color: COLOR_BLUE_DARK,
@@ -156,7 +182,7 @@ class _ProcessPageState extends State<ProcessPage> {
                               ),
                             ),
                             GridColumn(
-                              width: 120,
+                              width: columnWidths['startTime']!,
                               columnName: 'startTime',
                               label: Container(
                                 color: COLOR_BLUE_DARK,
@@ -169,7 +195,7 @@ class _ProcessPageState extends State<ProcessPage> {
                               ),
                             ),
                             GridColumn(
-                              width: 120,
+                              width: columnWidths['EndDate']!,
                               columnName: 'EndDate',
                               label: Container(
                                 color: COLOR_BLUE_DARK,
@@ -182,7 +208,7 @@ class _ProcessPageState extends State<ProcessPage> {
                               ),
                             ),
                             GridColumn(
-                              width: 120,
+                              width: columnWidths['EndTime']!,
                               columnName: 'EndTime',
                               label: Container(
                                 color: COLOR_BLUE_DARK,
@@ -199,7 +225,7 @@ class _ProcessPageState extends State<ProcessPage> {
                       ),
                     )
                   : Container(
-                      child: Label(" กรุณากรอกข้อมูล"),
+                      child: Label(" Please input BatchNo"),
                     ),
             ],
           ),

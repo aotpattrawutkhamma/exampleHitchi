@@ -17,7 +17,8 @@ import 'package:intl/intl.dart';
 import 'package:sqflite/sqlite_api.dart';
 
 class MaterialInputScreen extends StatefulWidget {
-  const MaterialInputScreen({super.key});
+  MaterialInputScreen({super.key, this.onChange});
+  ValueChanged<List<Map<String, dynamic>>>? onChange;
 
   @override
   State<MaterialInputScreen> createState() => _MaterialInputScreenState();
@@ -47,9 +48,18 @@ class _MaterialInputScreenState extends State<MaterialInputScreen> {
 
   @override
   void initState() {
+    _materialFoucus.requestFocus();
     // _insertSqlite();
     // TODO: implement initState
     super.initState();
+  }
+
+  Future _getHold() async {
+    List<Map<String, dynamic>> sql =
+        await databaseHelper.queryAllRows('MATERIAL_TRACE_SHEET');
+    setState(() {
+      widget.onChange?.call(sql);
+    });
   }
 
   void checkValueController() {
@@ -57,10 +67,10 @@ class _MaterialInputScreenState extends State<MaterialInputScreen> {
         _operatorNameController.text.isNotEmpty &&
         _batchOrSerialController.text.isNotEmpty &&
         _machineOrProcessController.text.isNotEmpty &&
-        _lotNoController.text.isNotEmpty) {
+        _lotNoController.text.length != 3) {
       _callApi();
     } else {
-      EasyLoading.showInfo("กรุณาใส่ข้อมูลให้ครบ");
+      EasyLoading.showInfo("Please Input Data");
     }
   }
 
@@ -71,22 +81,22 @@ class _MaterialInputScreenState extends State<MaterialInputScreen> {
           MATERIAL: _materialController.text.trim(),
           MACHINENO: _machineOrProcessController.text.trim(),
           OPERATORNAME: int.tryParse(_operatorNameController.text.trim()),
-          BATCHNO: int.tryParse(_batchOrSerialController.text.trim()),
+          BATCHNO: _batchOrSerialController.text.trim(),
           LOT: _lotNoController.text.trim(),
-          STARTDATE: _dateTime.toString(),
+          STARTDATE: DateFormat('yyyy MM dd HH:mm').format(DateTime.now()),
         ),
       ),
     );
   }
 
-  void _insertSqlite() async {
+  Future _insertSqlite() async {
     await databaseHelper.insertSqlite('MATERIAL_TRACE_SHEET', {
       'Material': _materialController.text.trim(),
       'OperatorName': _operatorNameController.text.trim(),
       'BatchNo': _batchOrSerialController.text.trim(),
       'MachineNo': _machineOrProcessController.text.trim(),
       'LotNo1': _lotNoController.text.trim(),
-      'Date1': DateFormat('dd MMM yyyy HH:mm').format(DateTime.now())
+      'Date1': DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())
     });
   }
 
@@ -94,11 +104,10 @@ class _MaterialInputScreenState extends State<MaterialInputScreen> {
   Widget build(BuildContext context) {
     return BgWhite(
       isHideAppBar: true,
-      textTitle: "MaterialInput",
       body: MultiBlocListener(
         listeners: [
           BlocListener<LineElementBloc, LineElementState>(
-            listener: (context, state) {
+            listener: (context, state) async {
               if (state is MaterialInputLoadingState) {
                 EasyLoading.show(status: "Loading ...");
               } else if (state is MaterialInputLoadedState) {
@@ -112,36 +121,68 @@ class _MaterialInputScreenState extends State<MaterialInputScreen> {
                   setState(() {
                     bgColor = Colors.grey;
                   });
-                  _materialController.clear();
-                  _operatorNameController.clear();
-                  _batchOrSerialController.clear();
-                  _machineOrProcessController.clear();
-                  _lotNoController.clear();
-                  EasyLoading.showSuccess("${_inputMtModel?.MESSAGE}",
-                      duration: Duration(seconds: 5));
-                  _materialFoucus.requestFocus();
+                  _errorDialog(
+                      isHideCancle: false,
+                      text: Label("${_inputMtModel?.MESSAGE}"),
+                      onpressOk: () {
+                        Navigator.pop(context);
+                        _materialController.clear();
+                        _operatorNameController.clear();
+                        _batchOrSerialController.clear();
+                        _machineOrProcessController.clear();
+                        _lotNoController.clear();
+                        _materialFoucus.requestFocus();
+                      });
                 } else if (_inputMtModel!.RESULT == false) {
+                  EasyLoading.dismiss();
                   if (_machineOrProcessController.text.isNotEmpty &&
                       _operatorNameController.text.isNotEmpty &&
                       _batchOrSerialController.text.isNotEmpty &&
                       _machineOrProcessController.text.isNotEmpty &&
                       _lotNoController.text.isNotEmpty) {
-                    _insertSqlite();
-                    EasyLoading.showError("Failed To Send");
+                    _errorDialog(
+                        text: Label(
+                            "${_inputMtModel?.MESSAGE ?? "Check Connection"}"),
+                        onpressOk: () async {
+                          await _insertSqlite();
+                          await _getHold();
+                          _materialController.clear();
+                          _operatorNameController.clear();
+                          _batchOrSerialController.clear();
+                          _machineOrProcessController.clear();
+                          _lotNoController.clear();
+                          _materialFoucus.requestFocus();
+                          Navigator.pop(context);
+                        });
                   } else {
-                    EasyLoading.showInfo("กรุณาใส่ข้อมูลให้ครบ");
+                    EasyLoading.showInfo("Please Input Data");
                   }
                 } else {
+                  EasyLoading.dismiss();
                   if (_machineOrProcessController.text.isNotEmpty &&
                       _operatorNameController.text.isNotEmpty &&
                       _batchOrSerialController.text.isNotEmpty &&
                       _machineOrProcessController.text.isNotEmpty &&
                       _lotNoController.text.isNotEmpty) {
-                    _insertSqlite();
-                    EasyLoading.showError(
-                        "Please Check Connection Internet & Save Complete");
+                    _errorDialog(
+                        text: Label(
+                            "Please Check Connection Internet\n Do you want to Save Data ?"),
+                        onpressOk: () async {
+                          await _insertSqlite();
+                          await _getHold();
+                          _materialController.clear();
+                          _operatorNameController.clear();
+                          _batchOrSerialController.clear();
+                          _machineOrProcessController.clear();
+                          _lotNoController.clear();
+                          setState(() {
+                            bgColor = Colors.grey;
+                          });
+                          _materialFoucus.requestFocus();
+                          Navigator.pop(context);
+                        });
                   } else {
-                    EasyLoading.showInfo("กรุณาใส่ข้อมูลให้ครบ");
+                    EasyLoading.showInfo("Please Input Data");
                   }
                 }
               }
@@ -149,14 +190,22 @@ class _MaterialInputScreenState extends State<MaterialInputScreen> {
                 EasyLoading.show();
               }
               if (state is CheckMaterialInputLoadedState) {
+                EasyLoading.dismiss();
                 setState(() {
                   _responeDefault = state.item;
                 });
                 if (_responeDefault!.RESULT == true) {
-                  EasyLoading.showSuccess("Success");
+                  _operatorNameFouc.requestFocus();
                 } else {
-                  EasyLoading.showError("${_responeDefault?.MESSAGE}",
-                      duration: Duration(seconds: 5));
+                  print("Count");
+                  _errorDialog(
+                      isHideCancle: false,
+                      text: Label(
+                          "${_responeDefault?.MESSAGE ?? "Check Connection"}"),
+                      onpressOk: () {
+                        _materialController.clear();
+                        Navigator.pop(context);
+                      });
                 }
               } else if (state is CheckMaterialInputErrorState) {
                 EasyLoading.dismiss();
@@ -179,7 +228,6 @@ class _MaterialInputScreenState extends State<MaterialInputScreen> {
                     BlocProvider.of<LineElementBloc>(context).add(
                       CheckMaterialInputEvent(_materialController.text.trim()),
                     );
-                    _operatorNameFouc.requestFocus();
                   },
                 ),
                 const SizedBox(
@@ -229,11 +277,16 @@ class _MaterialInputScreenState extends State<MaterialInputScreen> {
                   focusNode: _lotNoFocus,
                   labelText: "Lot No. :",
                   controller: _lotNoController,
-                  onEditingComplete: () => checkValueController(),
+                  maxLength: 255,
+                  onEditingComplete: () {
+                    if (_lotNoController.text.length != 3) {
+                      checkValueController();
+                    } else if (_lotNoController.text.length == 3) {}
+                  },
                   textInputFormatter: [
-                    FilteringTextInputFormatter.allow(
-                      RegExp(r'^(?!.*\d{3})[a-zA-Z0-9]+$'),
-                    ),
+                    // FilteringTextInputFormatter.allow(
+                    //   RegExp(r'^(?!.*\d{4})[a-zA-Z0-9]+$'),
+                    // ),
                   ],
                   onChanged: (value) {
                     setState(() {
@@ -242,13 +295,15 @@ class _MaterialInputScreenState extends State<MaterialInputScreen> {
                           value == _operatorNameController.text &&
                           value == _materialController.text) {
                         _lotNoController.text = "";
-                        EasyLoading.showError("Input Again");
+                        _errorDialog(
+                            text: Label("Please Input Lot No. Again"),
+                            onpressOk: () => Navigator.pop(context));
                       } else if (_batchOrSerialController.text.isNotEmpty &&
                           _machineOrProcessController.text.isNotEmpty &&
                           _operatorNameController.text.isNotEmpty &&
                           _materialController.text.isNotEmpty) {
                         setState(() {
-                          bgColor = COLOR_RED;
+                          bgColor = COLOR_BLUE_DARK;
                         });
                       } else {
                         setState(() {
@@ -275,6 +330,59 @@ class _MaterialInputScreenState extends State<MaterialInputScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _errorDialog(
+      {Label? text,
+      Function? onpressOk,
+      Function? onpressCancel,
+      bool isHideCancle = true}) async {
+    // EasyLoading.showError("Error[03]", duration: Duration(seconds: 5));//if password
+    showDialog<String>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        // title: const Text('AlertDialog Title'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: text,
+            ),
+          ],
+        ),
+
+        actions: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Visibility(
+                visible: isHideCancle,
+                child: ElevatedButton(
+                  style: ButtonStyle(
+                      backgroundColor:
+                          MaterialStatePropertyAll(COLOR_BLUE_DARK)),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+              ),
+              Visibility(
+                visible: isHideCancle,
+                child: SizedBox(
+                  width: 15,
+                ),
+              ),
+              ElevatedButton(
+                style: ButtonStyle(
+                    backgroundColor: MaterialStatePropertyAll(COLOR_BLUE_DARK)),
+                onPressed: () => onpressOk?.call(),
+                child: const Text('OK'),
+              ),
+            ],
+          )
+        ],
       ),
     );
   }

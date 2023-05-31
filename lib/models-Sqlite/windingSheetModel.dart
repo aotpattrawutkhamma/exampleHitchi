@@ -15,7 +15,7 @@ class WindingSheetModel {
       this.START_END,
       this.CHECK_COMPLETE,
       this.ID});
-  final String? ID;
+  final int? ID;
   final String? MACHINE_NO;
   final String? OPERATOR_NAME;
   final String? BATCH_NO;
@@ -63,15 +63,4 @@ class WindingSheetModel {
         STATUS = map['Status'],
         START_END = map['start_end'],
         CHECK_COMPLETE = map['checkComplete'];
-
-  List<WindingSheetModel> convertToList(List<Map<String, dynamic>> list) {
-    List<WindingSheetModel> result = [];
-
-    for (Map<String, dynamic> map in list) {
-      WindingSheetModel model = WindingSheetModel.fromMap(map);
-      result.add(model);
-    }
-
-    return result;
-  }
 }

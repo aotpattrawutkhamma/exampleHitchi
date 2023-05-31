@@ -10,7 +10,7 @@ class MaterialOutputModel {
   final String? MATERIAL;
   final String? MACHINENO;
   final int? OPERATORNAME;
-  final int? BATCHNO;
+  final String? BATCHNO;
   final String? LOT;
   final String? STARTDATE;
 
@@ -18,7 +18,7 @@ class MaterialOutputModel {
     String? MATERIAL,
     String? MACHINENO,
     int? OPERATORNAME,
-    int? BATCHNO,
+    String? BATCHNO,
     String? LOT,
     String? STARTDATE,
   }) {

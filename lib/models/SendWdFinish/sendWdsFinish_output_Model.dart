@@ -2,13 +2,13 @@ class SendWdsFinishOutputModel {
   const SendWdsFinishOutputModel(
       {this.BATCH_NO, this.ELEMNT_QTY, this.FINISH_DATE, this.OPERATOR_NAME});
 
-  final int? BATCH_NO;
+  final String? BATCH_NO;
   final int? OPERATOR_NAME;
   final int? ELEMNT_QTY;
   final String? FINISH_DATE;
 
   SendWdsFinishOutputModel copyWith({
-    int? BATCH_NO,
+    String? BATCH_NO,
     int? OPERATOR_NAME,
     int? ELEMNT_QTY,
     String? FINISH_DATE,
@@ -23,8 +23,8 @@ class SendWdsFinishOutputModel {
 
   @override
   Map toJson() => {
-        'OperatorName': BATCH_NO,
-        'BatchNo': OPERATOR_NAME,
+        'OperatorName': OPERATOR_NAME,
+        'BatchNo': BATCH_NO,
         'ElementQty': ELEMNT_QTY,
         'FinishDate': FINISH_DATE,
       };

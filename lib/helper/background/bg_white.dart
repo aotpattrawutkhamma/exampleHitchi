@@ -11,14 +11,16 @@ class BgWhite extends StatelessWidget {
       this.isHidePreviour = false,
       this.textTitle,
       this.bottomNavigationBar,
+      this.onPressedBack,
       super.key});
   final Widget? body;
   final Widget? appbar;
   final bool isHideAppBar;
   final bool isHideTitle;
-  final String? textTitle;
+  final Widget? textTitle;
   final bool isHidePreviour;
   final Widget? bottomNavigationBar;
+  final Function? onPressedBack;
 
   @override
   Widget build(BuildContext context) {
@@ -32,13 +34,14 @@ class BgWhite extends StatelessWidget {
                 elevation: 0,
                 backgroundColor: COLOR_TRANSPARENT,
                 centerTitle: true,
-                title: isHideTitle ? null : Label(textTitle ?? ""),
+                title: isHideTitle ? null : textTitle,
                 automaticallyImplyLeading: false,
                 leading: isHidePreviour
                     ? null
                     : BackButton(
                         color: COLOR_BLACK,
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () =>
+                            onPressedBack?.call() ?? Navigator.pop(context),
                       ),
               ),
         body: body,

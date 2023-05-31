@@ -86,7 +86,7 @@ class ProcessStartEvent extends LineElementEvent {
 class ProcessFinishInputEvent extends LineElementEvent {
   const ProcessFinishInputEvent(this.items);
 
-  final ProcessOutputModel items;
+  final ProcessFinishOutputModel items;
   @override
   List<Object> get prop => [items];
 }
@@ -99,3 +99,13 @@ class CheckMaterialInputEvent extends LineElementEvent {
   @override
   List<Object> get prop => [items];
 }
+
+// //////////////////------------MaterialEvent-----------///////////////
+// class PMDailySendEvent extends LineElementEvent {
+//   const PMDailySendEvent(this.items);
+//
+//   final PMDailyOutputModel items;
+//
+//   @override
+//   List<Object> get prop => [items];
+// }

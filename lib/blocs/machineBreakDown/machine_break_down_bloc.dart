@@ -48,8 +48,8 @@ class MachineBreakDownBloc
       Response responese = await dio.post(ApiConfig.MACHINE_BREAKDOWN,
           options: Options(
               headers: ApiConfig.HEADER(),
-              sendTimeout: Duration(seconds: 3),
-              receiveTimeout: Duration(seconds: 3)),
+              sendTimeout: Duration(seconds: 60),
+              receiveTimeout: Duration(seconds: 60)),
           data: jsonEncode(item));
       print(responese.data);
       ResponeDefault post = ResponeDefault.fromJson(responese.data);

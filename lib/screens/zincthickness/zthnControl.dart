@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:hitachi/config.dart';
 import 'package:hitachi/helper/background/bg_white.dart';
 import 'package:hitachi/helper/colors/colors.dart';
+import 'package:hitachi/helper/text/label.dart';
 import 'package:hitachi/screens/zincthickness/hold/zincthicknessHold.dart';
 import 'package:hitachi/screens/zincthickness/scan/zincthicknessScan.dart';
+import 'package:hitachi/services/databaseHelper.dart';
 
 class ZincThicknessControl extends StatefulWidget {
   const ZincThicknessControl({super.key});
@@ -12,6 +15,8 @@ class ZincThicknessControl extends StatefulWidget {
 }
 
 class _ZincThicknessControlState extends State<ZincThicknessControl> {
+  List<Map<String, dynamic>> listHoldZincThickness = [];
+  DatabaseHelper databaseHelper = DatabaseHelper();
   @override
   int _selectedIndex = 0;
   void _onItemTapped(int index) {
@@ -24,12 +29,47 @@ class _ZincThicknessControlState extends State<ZincThicknessControl> {
     });
   }
 
-  List<Widget> widgetOptions = [ZincThickNessScanScreen(), ZincThickNessHold()];
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
+    List<Widget> widgetOptions = [
+      ZincThickNessScanScreen(
+        onChange: (value) {
+          setState(() {
+            listHoldZincThickness = value;
+          });
+        },
+      ),
+      ZincThickNessHold(
+        onChange: (value) {
+          setState(() {
+            listHoldZincThickness = value;
+          });
+        },
+      )
+    ];
     return BgWhite(
-      textTitle: "Zinc Thickness",
+      textTitle: Padding(
+        padding: const EdgeInsets.only(right: 45),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Label("Zinc Thickness"),
+            SizedBox(
+              width: 10,
+            ),
+            Label(
+              "-${listHoldZincThickness.length ?? 0}-",
+              color: COLOR_RED,
+            )
+          ],
+        ),
+      ),
       body: Center(
         child: widgetOptions.elementAt(_selectedIndex),
       ),

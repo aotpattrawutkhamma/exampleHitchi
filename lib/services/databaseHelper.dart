@@ -76,6 +76,8 @@ class DatabaseHelper {
     _createDateWindingPlan(db, newVersion);
     _createBarcodePrinting(db, newVersion);
     _createZincThickness(db, newVersion);
+    _createPlanWinding(db, newVersion);
+    _createPMDaily(db, newVersion);
   }
 
   Future<int> insertSqlite(String tableName, Map<String, dynamic> row) async {
@@ -113,6 +115,22 @@ class DatabaseHelper {
   Future<List<Map<String, dynamic>>> queryAllRows(String tableName) async {
     Database db = await this.database;
     return await db.query(tableName);
+  }
+
+  Future<List<Map<String, dynamic>>> queryAllProcessStartRows(
+      String? tableName, String? whereName) async {
+    try {
+      String sql =
+          // " SELECT Machine,OperatorName,OperatorName1,OperatorName2,OperatorName3,BatchNo,StartDate,Garbage,FinDate,StartEnd,CheckComplete " +
+          " SELECT * " +
+              "FROM  $tableName " +
+              "WHERE (StartEnd = '${whereName}')";
+      Database db = await this.database;
+      return await db.rawQuery(sql);
+    } catch (e) {
+      print(e);
+      return [];
+    }
   }
 
   Future<List<Map<String, dynamic>>> queryWeight({
@@ -161,6 +179,94 @@ class DatabaseHelper {
     }
   }
 
+  Future<List<Map<String, dynamic>>> queryDataSelectPMDaily({
+    String? select1,
+    String? select2,
+    String? select3,
+    String? select4,
+    String? formTable,
+    String? where,
+    String? stringValue,
+  }) async {
+    try {
+      String sql =
+          "SELECT ${select1}, ${select2}, ${select3}, ${select4} FROM ${formTable} WHERE ${where} = '${stringValue}'"; // แก้ไขตรงนี้;
+      Database db = await this.database;
+      return await db.rawQuery(sql); // ปิดวงเล็บตรงนี้
+    } catch (e) {
+      print(e);
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> queryDataSelectProcess({
+    String? select1,
+    String? select2,
+    String? select3,
+    String? select4,
+    String? select5,
+    String? select6,
+    String? formTable,
+    String? where,
+    String? stringValue,
+    String? keyAnd,
+    String? value,
+  }) async {
+    try {
+      String sql =
+          "SELECT ${select1}, ${select2}, ${select3}, ${select4}, ${select5}, ${select6} FROM ${formTable} WHERE ${where} = '${stringValue}'" +
+              " AND (${keyAnd}='${value}') AND StartEnd = 'S' "; // แก้ไขตรงนี้;
+      Database db = await this.database;
+      return await db.rawQuery(sql); // ปิดวงเล็บตรงนี้
+    } catch (e) {
+      print(e);
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> queryProcessSF({
+    String? select1,
+    String? select2,
+    String? select3,
+    String? select4,
+    String? formTable,
+    String? where,
+    String? stringValue,
+    String? keyAnd,
+    String? value,
+  }) async {
+    try {
+      String sql =
+          "SELECT ${select1}, ${select2}, ${select3}, ${select4} FROM ${formTable} WHERE ${where} = '${stringValue}'" +
+              " AND (${keyAnd}='${value}') AND StartEnd = 'E' "; // แก้ไขตรงนี้;
+      Database db = await this.database;
+      return await db.rawQuery(sql); // ปิดวงเล็บตรงนี้
+    } catch (e) {
+      print(e);
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> queryDataPMDaily({
+    String? select1,
+    String? select2,
+    String? select3,
+    String? select4,
+    String? formTable,
+    String? where,
+    String? stringValue,
+  }) async {
+    try {
+      String sql =
+          "SELECT ${select1}, ${select2}, ${select3}, ${select4} FROM ${formTable} WHERE ${where} = '${stringValue}'"; // แก้ไขตรงนี้;
+      Database db = await this.database;
+      return await db.rawQuery(sql); // ปิดวงเล็บตรงนี้
+    } catch (e) {
+      print(e);
+      return [];
+    }
+  }
+
   Future<void> deleteSave(
       {String? tableName, String? where, String? keyWhere}) async {
     try {
@@ -191,6 +297,69 @@ class DatabaseHelper {
     }
   }
 
+//updateProcessStart
+  Future<int> updateProcessStart(
+      {String? table,
+      String? key1,
+      String? key2,
+      String? key3,
+      String? key4,
+      String? key5,
+      String? key6,
+      num? yieldKey1,
+      num? yieldKey2,
+      num? yieldKey3,
+      num? yieldKey4,
+      String? yieldKey5,
+      String? yieldKey6,
+      String? whereKey,
+      String? value,
+      String? whereKey2,
+      String? value2}) async {
+    final Database db = await database;
+    String sql =
+        "UPDATE ${table} SET ${key1} = '$yieldKey1', ${key2} = '$yieldKey2', ${key3} = '$yieldKey3', ${key4} = '$yieldKey4', ${key5} = '$yieldKey5', ${key6} = '$yieldKey6' WHERE ${whereKey} = '$value'"
+        " AND ${whereKey2} ='${value2}'  AND StartEnd = 'S'";
+    return await db.rawUpdate(sql);
+  }
+
+  Future<int> updatetest() async {
+    final Database db = await database;
+
+    try {
+      String sql =
+          "UPDATE PROCESS_SHEET SET OperatorName = '2344', BatchNo = '100106554407', Garbage = '0', FinDate = '2023 05 26 12:02:45',StartEnd = 'E' WHERE Machine = 'WD4' AND BatchNo = '100106554407'";
+      // แก้ไขตรงนี้;
+      return await db.rawUpdate(sql);
+    } on Exception {
+      throw Exception();
+    }
+  }
+
+  //updateProcessFinish
+  Future<int> updateProcessFinish(
+      {String? table,
+      String? key1,
+      String? key2,
+      String? key3,
+      String? key4,
+      String? key5,
+      num? yieldKey1,
+      String? yieldKey2,
+      String? yieldKey3,
+      String? yieldKey4,
+      String? yieldKey5, //setE
+      String? whereKey,
+      String? value,
+      String? whereKey2,
+      String? value2}) async {
+    final Database db = await database;
+    String sql =
+        "UPDATE ${table} SET ${key1} = '$yieldKey1', ${key2} = '$yieldKey2', ${key3} = '$yieldKey3', ${key4} = '$yieldKey4' , StartEnd = 'E' WHERE ${whereKey} = '$value'"
+        " AND ${whereKey2} ='${value2}' AND StartEnd = 'E' "; // แก้ไขตรงนี้;
+    return await db.rawUpdate(sql);
+  }
+
   //เขียนข้อมูลในSQlite
 
   //ลบข้อมูลในSQLITE
@@ -209,18 +378,18 @@ class DatabaseHelper {
     }
   }
 
-  // Future<void> findSqliteFile() async {
-  //   Directory appDocDir = await getApplicationDocumentsDirectory();
-  //   String sqliteFilePath = '${appDocDir.path}/my_database.db';
-  //   print(sqliteFilePath);
-  //   // ตรวจสอบว่าไฟล์มีอยู่จริงหรือไม่
-  //   if (await File(sqliteFilePath).exists()) {
-  //     print('Found SQLite file at $sqliteFilePath');
-  //   } else {
-  //     print('SQLite file not found!');
-  //   }
-  // }
-  //
+  Future<void> deleteDataAllFromSQLite({
+    String? tableName,
+  }) async {
+    try {
+      Database db = await DatabaseHelper().database;
+      int count = await db.delete('${tableName!}');
+      print('Data deleted from SQLite with count: $count');
+    } catch (e) {
+      print('Error deleting from SQLite: $e');
+    }
+  }
+
   //TableDataSheetTable---------------------------------------------------------------------------------------------------------------------------------
   //
   Future<void> writeTableDataSheet_ToSQLite(
@@ -610,7 +779,9 @@ class DatabaseHelper {
         'MT1StartDate TEXT,'
         'MT2 TEXT,'
         'MT2StartDate TEXT,'
+        'MT1StopName TEXT,'
         'MT1StopDate TEXT,'
+        'MT2StopName TEXT,'
         'MT2StopDate TEXT,'
         'CheckUser TEXT,'
         'BreakStopDate TEXT,'
@@ -735,7 +906,7 @@ class DatabaseHelper {
   ///
   Future<void> writeTableWindingWeightSheet_ToSqlite({
     String? machineNo,
-    int? batchNo,
+    String? batchNo,
     num? target,
   }) async {
     Database db = await DatabaseHelper().database;
@@ -787,6 +958,7 @@ class DatabaseHelper {
 
   void _craetePM(Database db, int newVersion) async {
     await db.execute('CREATE TABLE PM_SHEET ('
+        'ID INTEGER PRIMARY KEY AUTOINCREMENT, '
         'OperatorName TEXT, '
         'CheckPointPM TEXT, '
         'Status TEXT, '
@@ -837,6 +1009,26 @@ class DatabaseHelper {
         'Thickness8 TEXT, '
         'Thickness9 TEXT, '
         'DateData TEXT)');
+  }
+
+  void _createPlanWinding(Database db, int newVersion) async {
+    await db.execute('CREATE TABLE PLAN_WINDING_SHEET ('
+        'ID INTEGER PRIMARY KEY AUTOINCREMENT,'
+        'PlanDate TEXT, '
+        'OrderPlan TEXT, '
+        'OrderNo TEXT, '
+        'Batch TEXT, '
+        'IPE TEXT, '
+        'Qty TEXT, '
+        'Note TEXT) ');
+  }
+
+  void _createPMDaily(Database db, int newVersion) async {
+    await db.execute('CREATE TABLE PM_DAILY_SHEET ('
+        'ID INTEGER PRIMARY KEY AUTOINCREMENT,'
+        'CTType TEXT, '
+        'Status TEXT, '
+        'Description TEXT) ');
   }
 
   Future<List<Map<String, dynamic>>> fetchZincThickness({String? batch}) async {

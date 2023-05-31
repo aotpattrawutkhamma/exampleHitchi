@@ -1,7 +1,6 @@
 class ProcessInputModel {
-  const ProcessInputModel({this.MESSAGE, this.RESULT, this.BATCHNO});
+  const ProcessInputModel({this.MESSAGE, this.RESULT});
 
-  final String? BATCHNO;
   final bool? RESULT;
   final String? MESSAGE;
 
@@ -9,7 +8,6 @@ class ProcessInputModel {
 
   static ProcessInputModel fromJson(dynamic json) {
     return ProcessInputModel(
-      BATCHNO: json['batchNo'],
       RESULT: json['result'],
       MESSAGE: json['message'],
     );

@@ -45,7 +45,7 @@ class _ReportRouteSheetScreenState extends State<ReportRouteSheetScreen> {
     ];
 
     return BgWhite(
-      textTitle: "ReportRouteSheet",
+      textTitle: Label("ReportRouteSheet"),
       body: Center(
         child: widgetOptions.elementAt(_selectedIndex),
       ),

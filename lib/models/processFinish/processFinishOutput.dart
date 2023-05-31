@@ -9,15 +9,16 @@ class ProcessFinishOutputModel {
 
   final String? MACHINE;
   final int? OPERATORNAME;
-  final int? REJECTQTY;
-  final String? BATCHNO;
+  final String? REJECTQTY;
+  final int? BATCHNO;
+
   final String? FINISHDATE;
 
   ProcessFinishOutputModel copyWith({
     String? MACHINE,
     int? OPERATORNAME,
-    int? REJECTQTY,
-    String? BATCHNO,
+    String? REJECTQTY,
+    int? BATCHNO,
     String? FINISHDATE,
   }) {
     return ProcessFinishOutputModel(
@@ -31,7 +32,7 @@ class ProcessFinishOutputModel {
 
   @override
   Map toJson() => {
-        'Machine': MACHINE,
+        'MachineNo': MACHINE,
         'OperatorName': OPERATORNAME,
         'RejectQty': REJECTQTY,
         'BatchNo': BATCHNO,

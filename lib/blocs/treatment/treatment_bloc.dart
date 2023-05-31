@@ -55,11 +55,19 @@ class TreatmentBloc extends Bloc<TreatmentEvent, TreatmentState> {
   Future<ResponeDefault> fetchTreatmentSendStart(
       TreatMentOutputModel item) async {
     try {
+      print("Check${item.BATCH_NO_1}");
+      print("Check${item.BATCH_NO_2}");
+      print("Check${item.BATCH_NO_3}");
+      print("Check${item.BATCH_NO_4}");
+      print("Check${item.BATCH_NO_5}");
+      print("Check${item.BATCH_NO_6}");
+      print("Check${item.BATCH_NO_7}");
+      print(ApiConfig.TREAMTMENT_START);
       Response responese = await dio.post(ApiConfig.TREAMTMENT_START,
           options: Options(
               headers: ApiConfig.HEADER(),
-              sendTimeout: Duration(minutes: 60),
-              receiveTimeout: Duration(minutes: 60)),
+              sendTimeout: Duration(seconds: 5),
+              receiveTimeout: Duration(seconds: 5)),
           data: jsonEncode(item));
       print(responese.data);
       ResponeDefault post = ResponeDefault.fromJson(responese.data);

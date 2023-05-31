@@ -1,14 +1,14 @@
 class sendWdsReturnWeightInputModel {
-  const sendWdsReturnWeightInputModel({this.MESSAGE, this.WEIGHT, this.RESULT});
-  final num? WEIGHT;
+  const sendWdsReturnWeightInputModel({this.MESSAGE, this.TARGET, this.RESULT});
+  final num? TARGET;
   final bool? RESULT;
   final String? MESSAGE;
 
-  List<Object> get props => [WEIGHT!, RESULT!, MESSAGE!];
+  List<Object> get props => [TARGET!, RESULT!, MESSAGE!];
 
   static sendWdsReturnWeightInputModel fromJson(dynamic json) {
     return sendWdsReturnWeightInputModel(
-      WEIGHT: json['weight'],
+      TARGET: json['target'],
       RESULT: json['result'],
       MESSAGE: json['message'],
     );

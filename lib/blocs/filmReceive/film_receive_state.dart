@@ -30,3 +30,25 @@ class FilmReceiveErrorState extends FilmReceiveState {
   @override
   List<Object> get props => [error];
 }
+
+class CheckFilmReceiveLoadingState extends FilmReceiveState {
+  const CheckFilmReceiveLoadingState();
+  @override
+  List<Object> get props => [];
+}
+
+class CheckFilmReceiveLoadedState extends FilmReceiveState {
+  const CheckFilmReceiveLoadedState(this.item);
+  final CheckPackNoModel item;
+
+  @override
+  List<Object> get props => [item];
+}
+
+class CheckFilmReceiveErrorState extends FilmReceiveState {
+  const CheckFilmReceiveErrorState(this.error);
+  final String error;
+
+  @override
+  List<Object> get props => [error];
+}

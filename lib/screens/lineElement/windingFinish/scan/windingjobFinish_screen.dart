@@ -21,7 +21,8 @@ import 'package:intl/intl.dart';
 import 'package:sqflite/sqflite.dart';
 
 class WindingJobFinishScreen extends StatefulWidget {
-  const WindingJobFinishScreen({super.key});
+  WindingJobFinishScreen({super.key, this.onChange});
+  ValueChanged<List<Map<String, dynamic>>>? onChange;
 
   @override
   State<WindingJobFinishScreen> createState() => _WindingJobFinishScreenState();
@@ -44,42 +45,43 @@ class _WindingJobFinishScreenState extends State<WindingJobFinishScreen> {
   SendWdsFinishOutputModel? _outputModel;
 
   ReportRouteSheetModel? itemsReport;
-  String? target = "invaild";
+  String target = "invaild";
   void _btnSend_Click() async {
     if (batchNoController.text.trim().isNotEmpty &&
         operatorNameController.text.trim().isNotEmpty &&
         elementQtyController.text.trim().isNotEmpty) {
-      try {
-        _callApi(
-            batchNo: int.tryParse(batchNoController.text.trim()),
-            element: int.tryParse(elementQtyController.text.trim()),
-            batchEnddate: DateTime.now().toString());
-
-        EasyLoading.showSuccess("sendComplete");
-      } catch (e) {
-        EasyLoading.showError("Can not send");
-      }
+      _callApi();
     } else {
       EasyLoading.showError("Data incomplete", duration: Duration(seconds: 2));
     }
   }
 
-  void _deleteSave() async {
+  Future _getHold() async {
+    List<Map<String, dynamic>> sql =
+        await databaseHelper.queryAllRows('WINDING_SHEET');
+    setState(() {
+      widget.onChange?.call(
+          sql.where((element) => element['checkComplete'] == 'E').toList());
+    });
+  }
+
+  Future _deleteSave() async {
     await databaseHelper.deleteSave(
         tableName: 'WINDING_SHEET',
         where: 'BatchNo',
         keyWhere: batchNoController.text.trim());
   }
 
-  Future<void> _callApi(
-      {int? batchNo, int? element, String? batchEnddate}) async {
+  Future<void> _callApi() async {
     BlocProvider.of<LineElementBloc>(context).add(
       PostSendWindingFinishEvent(
         SendWdsFinishOutputModel(
             OPERATOR_NAME: int.tryParse(operatorNameController.text.trim()),
-            BATCH_NO: batchNo,
-            ELEMNT_QTY: element,
-            FINISH_DATE: batchEnddate),
+            BATCH_NO: batchNoController.text.trim(),
+            ELEMNT_QTY: int.tryParse(elementQtyController.text.trim()),
+            FINISH_DATE: DateFormat('yyyy-MM-dd HH:mm:ss')
+                .format(DateTime.now())
+                .toString()),
       ),
     );
   }
@@ -90,8 +92,7 @@ class _WindingJobFinishScreenState extends State<WindingJobFinishScreen> {
         select2: 'MachineNo',
         formTable: 'WINDING_SHEET',
         where: 'BatchNo',
-        intValue:
-            int.tryParse(batchNoController.text.trim()), // If error check here
+        stringValue: batchNoController.text.trim(), // If error check here
         keyAnd: 'MachineNo',
         value: 'WD',
         keyAnd2: 'checkComplete',
@@ -102,9 +103,10 @@ class _WindingJobFinishScreenState extends State<WindingJobFinishScreen> {
           await databaseHelper.insertSqlite('WINDING_SHEET', {
         'MachineNo': 'WD',
         'BatchNo': batchNoController.text.trim(),
-        'Element': batchNoController.text.trim(),
-        'BatchEndDate': DateFormat('dd MMM yyyy HH:mm').format(DateTime.now()),
-        'start_end': DateFormat('dd MMM yyyy HH:mm').format(DateTime.now()),
+        'Element': elementQtyController.text.trim(),
+        'BatchEndDate':
+            DateFormat('yyyy MM dd HH:mm:ss').format(DateTime.now()),
+        'start_end': DateFormat('yyyy MM dd HH:mm:ss').format(DateTime.now()),
         'checkComplete': 'E',
       });
     }
@@ -143,14 +145,22 @@ class _WindingJobFinishScreenState extends State<WindingJobFinishScreen> {
         checkRow = "N/A";
       }
     } on Exception {
-      target = null;
+      target = "Invaild";
       throw Exception();
     }
+  }
+
+  Future _deleteWeightInSqlite() async {
+    await databaseHelper.deleteDataFromSQLite(
+        tableName: 'WINDING_WEIGHT_SHEET',
+        where: 'BatchNo',
+        id: batchNoController.text.trim());
   }
 
   @override
   void initState() {
     f1.requestFocus();
+    _getHold();
     super.initState();
   }
 
@@ -158,26 +168,36 @@ class _WindingJobFinishScreenState extends State<WindingJobFinishScreen> {
   Widget build(BuildContext context) {
     return BgWhite(
       isHideAppBar: true,
-      textTitle: "Winding job finish",
       body: MultiBlocListener(
         listeners: [
           BlocListener<LineElementBloc, LineElementState>(
-            listener: (context, state) {
+            listener: (context, state) async {
               if (state is PostSendWindingFinishLoadingState) {
                 EasyLoading.show(status: "Loading...");
               } else if (state is PostSendWindingFinishLoadedState) {
+                EasyLoading.dismiss();
                 setState(() {
                   items = state.item;
                 });
                 if (items!.RESULT == true) {
-                  _deleteSave();
+                  await _deleteSave();
+                  await _deleteWeightInSqlite();
+                  await _getHold();
+                  operatorNameController.clear();
+                  batchNoController.clear();
+                  elementQtyController.clear();
+                  f1.requestFocus();
                   EasyLoading.showSuccess("${items!.MESSAGE}");
                 } else if (items!.RESULT == false) {
                   if (batchNoController.text.trim().isNotEmpty &&
                       operatorNameController.text.trim().isNotEmpty &&
                       elementQtyController.text.trim().isNotEmpty) {
-                    _insertSqlite();
-                    EasyLoading.showError("${items!.MESSAGE}");
+                    _errorDialog(
+                        text: Label("${items!.MESSAGE ?? "Check Connection"}"),
+                        onpressOk: () async {
+                          await _insertSqlite();
+                          Navigator.pop(context);
+                        });
                   } else {
                     EasyLoading.showError("Please Input Info");
                   }
@@ -185,26 +205,45 @@ class _WindingJobFinishScreenState extends State<WindingJobFinishScreen> {
                   if (batchNoController.text.trim().isNotEmpty &&
                       operatorNameController.text.trim().isNotEmpty &&
                       elementQtyController.text.trim().isNotEmpty) {
-                    _insertSqlite();
-                    EasyLoading.showError(
-                        "Please Check Connection Internet & Save Complete");
+                    _errorDialog(
+                        text: Label(
+                            "Please Check Connection Internet \n Do you want to save data"),
+                        onpressOk: () async {
+                          await _insertSqlite();
+                          await _getHold();
+                          operatorNameController.clear();
+                          batchNoController.clear();
+                          elementQtyController.clear();
+                          f1.requestFocus();
+                          setState(() {
+                            target = "0";
+                            bgColor = Colors.grey;
+                          });
+                          Navigator.pop(context);
+                        });
                   }
                 }
-              } else {
+              } else if (state is PostSendWindingFinishErrorState) {
                 EasyLoading.showError("Can not send",
                     duration: Duration(seconds: 3));
               }
               if (state is CheckWindingFinishLoadingState) {
                 EasyLoading.show(status: "Loading...");
               } else if (state is CheckWindingFinishLoadedState) {
+                EasyLoading.dismiss();
                 if (state.item.RESULT == true) {
-                  EasyLoading.showSuccess("${state.item.MESSAGE}");
+                  f3.requestFocus();
                 } else {
-                  EasyLoading.showError("${state.item.MESSAGE}");
+                  _errorDialog(
+                      text: Label("${state.item.MESSAGE}"),
+                      onpressOk: () {
+                        Navigator.pop(context);
+                        f3.requestFocus();
+                      });
                 }
               } else if (state is CheckWindingFinishErrorState) {
-                EasyLoading.showError(
-                    "Please Check Connection & Save Complete");
+                EasyLoading.dismiss();
+                f3.requestFocus();
               }
             },
           )
@@ -222,7 +261,9 @@ class _WindingJobFinishScreenState extends State<WindingJobFinishScreen> {
                   controller: operatorNameController,
                   type: TextInputType.number,
                   textInputFormatter: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+                    FilteringTextInputFormatter.allow(
+                      RegExp(r'^(?!.*\d{12})[0-9]+$'),
+                    ),
                   ],
                 ),
                 BoxInputField(
@@ -232,17 +273,22 @@ class _WindingJobFinishScreenState extends State<WindingJobFinishScreen> {
                       BlocProvider.of<LineElementBloc>(context).add(
                         CheckWindingFinishEvent(batchNoController.text.trim()),
                       );
-                      f3.requestFocus();
                     }
                   },
                   labelText: "Batch No :",
                   maxLength: 12,
                   controller: batchNoController,
                   onChanged: (value) {
-                    setState(() {
-                      checkformtxtBatchNo();
-                      batchNoController.text.trim();
-                    });
+                    if (value.length == 12) {
+                      setState(() {
+                        checkformtxtBatchNo();
+                        batchNoController.text.trim();
+                      });
+                    } else {
+                      setState(() {
+                        target = "Invaild";
+                      });
+                    }
                   },
                 ),
                 BoxInputField(
@@ -257,7 +303,7 @@ class _WindingJobFinishScreenState extends State<WindingJobFinishScreen> {
                   onChanged: (p0) {
                     if (p0.length > 0) {
                       setState(() {
-                        bgColor = COLOR_RED;
+                        bgColor = COLOR_BLUE_DARK;
                       });
                     } else {
                       setState(() {
@@ -280,7 +326,7 @@ class _WindingJobFinishScreenState extends State<WindingJobFinishScreen> {
                           color: COLOR_RED,
                         ),
                         Label(
-                          "Target : ${target}",
+                          "Target : ${double.tryParse(target)?.toStringAsFixed(0) ?? "0"}",
                           color: COLOR_RED,
                         )
                       ],
@@ -308,18 +354,72 @@ class _WindingJobFinishScreenState extends State<WindingJobFinishScreen> {
     );
   }
 
-  // void _testSendSqlite() async {
-  //   try {
-  //     await databaseHelper.insertSqlite('WINDING_SHEET', {
-  //       'BatchNo': batchNoController.text.trim(),
-  //       'Element': elementQtyController.text.trim(),
-  //       'BatchEndDate': batchNoController.text.trim(),
-  //       'start_end': 'E',
-  //       'checkComplete': '0',
-  //       'value': 'WD'
-  //     });
-  //   } catch (e) {
-  //     print(e);
-  //   }
-  // }
+  void _errorDialog(
+      {Label? text,
+      Function? onpressOk,
+      Function? onpressCancel,
+      bool isHideCancle = true}) async {
+    // EasyLoading.showError("Error[03]", duration: Duration(seconds: 5));//if password
+    showDialog<String>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        // title: const Text('AlertDialog Title'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: text,
+            ),
+          ],
+        ),
+
+        actions: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Visibility(
+                visible: isHideCancle,
+                child: ElevatedButton(
+                  style: ButtonStyle(
+                      backgroundColor:
+                          MaterialStatePropertyAll(COLOR_BLUE_DARK)),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+              ),
+              Visibility(
+                visible: isHideCancle,
+                child: SizedBox(
+                  width: 15,
+                ),
+              ),
+              ElevatedButton(
+                style: ButtonStyle(
+                    backgroundColor: MaterialStatePropertyAll(COLOR_BLUE_DARK)),
+                onPressed: () => onpressOk?.call(),
+                child: const Text('OK'),
+              ),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+
+  void _testSendSqlite() async {
+    try {
+      await databaseHelper.insertSqlite('WINDING_SHEET', {
+        'BatchNo': batchNoController.text.trim(),
+        'Element': elementQtyController.text.trim(),
+        'BatchEndDate': batchNoController.text.trim(),
+        'start_end':
+            DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()).toString(),
+        'checkComplete': 'E',
+        'value': 'WD'
+      });
+    } catch (e) {
+      print(e);
+    }
+  }
 }

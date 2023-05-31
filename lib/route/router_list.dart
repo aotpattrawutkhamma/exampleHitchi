@@ -42,9 +42,13 @@ class RouterList {
   static const String FilmReceive_control_Screen =
       '/lineElementMenu/FilmReceive/FilmReceive_control_page';
   //PlanWinding
-  static const String Plan_winding = '/lineElementMenu/planWinding/planWinding';
+  static const String Planwinding_control_Screen =
+      '/lineElementMenu/planWinding';
   //FilmReceive
   static const String ZincThickness_control = '/lineElementMenu/Zincthickness';
+
+  //PM Daily
+  static const String PMDaily_control_Screen = '/LineElement/SendPMDaily';
   //Test Connection
   static const String Setting_web = '/settingWeb/settingWeb';
 }

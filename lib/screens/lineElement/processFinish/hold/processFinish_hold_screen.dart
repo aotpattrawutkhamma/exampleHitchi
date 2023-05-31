@@ -9,13 +9,15 @@ import 'package:hitachi/helper/text/label.dart';
 import 'package:hitachi/models-Sqlite/materialtraceModel.dart';
 import 'package:hitachi/models-Sqlite/processModel.dart';
 import 'package:hitachi/models/materialInput/materialOutputModel.dart';
+import 'package:hitachi/models/processFinish/processFinishOutput.dart';
 import 'package:hitachi/models/processStart/processOutputModel.dart';
 
 import 'package:hitachi/services/databaseHelper.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 
 class ProcessFinishHoldScreen extends StatefulWidget {
-  const ProcessFinishHoldScreen({super.key});
+  ProcessFinishHoldScreen({super.key, this.onChange});
+  ValueChanged<List<Map<String, dynamic>>>? onChange;
 
   @override
   State<ProcessFinishHoldScreen> createState() =>
@@ -23,21 +25,37 @@ class ProcessFinishHoldScreen extends StatefulWidget {
 }
 
 class _ProcessFinishHoldScreenState extends State<ProcessFinishHoldScreen> {
-  List<ProcessModel>? processList;
   DatabaseHelper databaseHelper = DatabaseHelper();
-  ProcessFinishDataSource? matTracDs;
-  int? selectedRowIndex;
+  ProcessStartDataSource? matTracDs;
+  List<int> _index = [];
   DataGridRow? datagridRow;
+
   List<ProcessModel>? processModelSqlite;
+  List<ProcessModel> processList = [];
   final TextEditingController _passwordController = TextEditingController();
+
   Color _colorSend = COLOR_GREY;
   Color _colorDelete = COLOR_GREY;
 
-  ////
-  Future<List<ProcessModel>> _getWindingSheet() async {
+  int? index;
+  int? allRowIndex;
+  List<ProcessModel> selectAll = [];
+  String StartEndValue = 'E';
+
+  late Map<String, double> columnWidths = {
+    'ID': double.nan,
+    'Machine': double.nan,
+    'Operatorname': double.nan,
+    'RejectQTY': double.nan,
+    'BatchNO': double.nan,
+    'FinDate': double.nan,
+  };
+
+  Future<List<ProcessModel>> _getProcessStart() async {
     try {
-      List<Map<String, dynamic>> rows =
-          await databaseHelper.queryAllRows('PROCESS_SHEET');
+      List<Map<String, dynamic>> rows = await databaseHelper
+          .queryAllProcessStartRows('PROCESS_SHEET', StartEndValue);
+      // await databaseHelper.queryAllRows('PROCESS_SHEET');
       List<ProcessModel> result =
           rows.map((row) => ProcessModel.fromMap(row)).toList();
       return result;
@@ -49,46 +67,135 @@ class _ProcessFinishHoldScreenState extends State<ProcessFinishHoldScreen> {
 
   @override
   void initState() {
-    _getWindingSheet().then((result) {
+    _getHold();
+    _getProcessStart().then((result) {
       setState(() {
         processList = result;
-        matTracDs = ProcessFinishDataSource(process: processList);
+        matTracDs = ProcessStartDataSource(process: processList);
       });
     });
     super.initState();
   }
 
-  void deletedInfo() async {
-    await databaseHelper.deletedRowSqlite(
-        tableName: 'PROCESS_SHEET',
-        columnName: 'ID',
-        columnValue: processList![selectedRowIndex!].ID);
+  Future _refreshPage() async {
+    await Future.delayed(Duration(seconds: 1), () {
+      _getProcessStart().then((result) {
+        setState(() {
+          processList = result;
+          matTracDs = ProcessStartDataSource(process: processList);
+        });
+      });
+    });
+  }
+
+  Future deletedInfo() async {
+    setState(() {
+      _index.forEach((element) async {
+        await databaseHelper.deletedRowSqlite(
+            tableName: 'PROCESS_SHEET', columnName: 'ID', columnValue: element);
+        _index.clear();
+      });
+    });
+  }
+
+  Future _getHold() async {
+    List<Map<String, dynamic>> sql =
+        await databaseHelper.queryAllRows('PROCESS_SHEET');
+    setState(() {
+      widget.onChange
+          ?.call(sql.where((element) => element['StartEnd'] == 'E').toList());
+    });
+  }
+
+  void _errorDialog(
+      {Label? text,
+      Function? onpressOk,
+      Function? onpressCancel,
+      bool isHideCancle = true}) async {
+    // EasyLoading.showError("Error[03]", duration: Duration(seconds: 5));//if password
+    showDialog<String>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        // title: const Text('AlertDialog Title'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: text,
+            ),
+          ],
+        ),
+
+        actions: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Visibility(
+                visible: isHideCancle,
+                child: ElevatedButton(
+                  style: ButtonStyle(
+                      backgroundColor:
+                          MaterialStatePropertyAll(COLOR_BLUE_DARK)),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+              ),
+              Visibility(
+                visible: isHideCancle,
+                child: SizedBox(
+                  width: 15,
+                ),
+              ),
+              ElevatedButton(
+                style: ButtonStyle(
+                    backgroundColor: MaterialStatePropertyAll(COLOR_BLUE_DARK)),
+                onPressed: () => onpressOk?.call(),
+                child: const Text('OK'),
+              ),
+            ],
+          )
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return BgWhite(
         isHideAppBar: true,
-        textTitle: "Material Input",
         body: MultiBlocListener(
           listeners: [
             BlocListener<LineElementBloc, LineElementState>(
-              listener: (context, state) {
-                if (state is MaterialInputLoadingState) {
-                  EasyLoading.show();
-                } else if (state is MaterialInputLoadedState) {
+              listener: (context, state) async {
+                if (state is ProcessFinishLoadingState) {
+                  EasyLoading.show(status: "Loading...");
+                } else if (state is ProcessFinishLoadedState) {
+                  EasyLoading.dismiss();
                   if (state.item.RESULT == true) {
-                    deletedInfo();
-                    Navigator.canPop(context);
-                    EasyLoading.dismiss();
+                    await deletedInfo();
+                    await _refreshPage();
+                    await _getHold();
                     EasyLoading.showSuccess("Send complete",
                         duration: Duration(seconds: 3));
                   } else {
-                    EasyLoading.showError("Please Check Data");
+                    _errorDialog(
+                        isHideCancle: false,
+                        text: Label(
+                            "${state.item.MESSAGE ?? "Check Connection"}"),
+                        onpressOk: () {
+                          Navigator.pop(context);
+                        });
                   }
-                } else {
+                } else if (state is ProcessFinishErrorState) {
                   EasyLoading.dismiss();
-                  EasyLoading.showError("Please Check Connection Internet");
+
+                  _errorDialog(
+                      text: Label("Check Connection"),
+                      isHideCancle: false,
+                      onpressOk: () async {
+                        Navigator.pop(context);
+                      });
                 }
               },
             )
@@ -101,43 +208,89 @@ class _ProcessFinishHoldScreenState extends State<ProcessFinishHoldScreen> {
                     ? Expanded(
                         child: Container(
                           child: SfDataGrid(
-                            showCheckboxColumn: true,
                             source: matTracDs!,
+                            showCheckboxColumn: true,
+                            selectionMode: SelectionMode.multiple,
                             headerGridLinesVisibility: GridLinesVisibility.both,
                             gridLinesVisibility: GridLinesVisibility.both,
-                            selectionMode: SelectionMode.single,
-                            onCellTap: (details) async {
-                              if (details.rowColumnIndex.rowIndex != 0) {
+                            allowPullToRefresh: true,
+                            allowColumnsResizing: true,
+                            columnResizeMode: ColumnResizeMode.onResizeEnd,
+                            onColumnResizeUpdate:
+                                (ColumnResizeUpdateDetails details) {
+                              setState(() {
+                                columnWidths[details.column.columnName] =
+                                    details.width;
+                                print(details.width);
+                              });
+                              return true;
+                            },
+                            onSelectionChanged:
+                                (selectRow, deselectedRows) async {
+                              if (selectRow.isNotEmpty) {
+                                if (selectRow.length ==
+                                        matTracDs!.effectiveRows.length &&
+                                    selectRow.length > 1) {
+                                  setState(() {
+                                    selectRow.forEach((row) {
+                                      _index.add(int.tryParse(
+                                          row.getCells()[0].value.toString())!);
+
+                                      _colorSend = COLOR_SUCESS;
+                                      _colorDelete = COLOR_RED;
+                                    });
+                                  });
+                                } else {
+                                  setState(() {
+                                    _index.add(int.tryParse(selectRow.first
+                                        .getCells()[0]
+                                        .value
+                                        .toString())!);
+                                    datagridRow = selectRow.first;
+                                    processModelSqlite = datagridRow!
+                                        .getCells()
+                                        .map(
+                                          (e) => ProcessModel(),
+                                        )
+                                        .toList();
+                                    print(_index);
+                                    _colorSend = COLOR_SUCESS;
+                                    _colorDelete = COLOR_RED;
+                                  });
+                                }
+                              } else {
                                 setState(() {
-                                  selectedRowIndex =
-                                      details.rowColumnIndex.rowIndex - 1;
-                                  datagridRow = matTracDs!.effectiveRows
-                                      .elementAt(selectedRowIndex!);
-                                  processModelSqlite = datagridRow!
-                                      .getCells()
-                                      .map(
-                                        (e) => ProcessModel(
-                                          MACHINE: e.value.toString(),
-                                          OPERATOR_NAME: e.value.toString(),
-                                          OPERATOR_NAME1: e.value.toString(),
-                                          OPERATOR_NAME2: e.value.toString(),
-                                          OPERATOR_NAME3: e.value.toString(),
-                                          BATCH_NO: e.value.toString(),
-                                          // LOTNO_1: e.value.toString(),
-                                          // DATE_1: e.value.toString(),
-                                          // MATERIAL_2: e.value.toString(),
-                                          // LOT_NO_2: e.value.toString(),
-                                          // DATE_2: e.value.toString(),
-                                        ),
-                                      )
-                                      .toList();
+                                  if (deselectedRows.length > 1) {
+                                    _index.clear();
+                                  } else {
+                                    _index.remove(int.tryParse(deselectedRows
+                                        .first
+                                        .getCells()[0]
+                                        .value
+                                        .toString())!);
+                                  }
                                 });
-                                _colorDelete = COLOR_RED;
-                                _colorSend = COLOR_SUCESS;
+
+                                print('No Rows Selected');
                               }
                             },
                             columns: <GridColumn>[
                               GridColumn(
+                                visible: false,
+                                width: columnWidths['ID']!,
+                                columnName: 'ID',
+                                label: Container(
+                                  color: COLOR_BLUE_DARK,
+                                  child: Center(
+                                    child: Label(
+                                      'ID',
+                                      color: COLOR_WHITE,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              GridColumn(
+                                width: columnWidths['Machine']!,
                                 columnName: 'Machine',
                                 label: Container(
                                   color: COLOR_BLUE_DARK,
@@ -150,51 +303,44 @@ class _ProcessFinishHoldScreenState extends State<ProcessFinishHoldScreen> {
                                 ),
                               ),
                               GridColumn(
-                                  columnName: 'Operatorname',
-                                  label: Container(
-                                    color: COLOR_BLUE_DARK,
-                                    child: Center(
-                                      child: Label('Operatorname',
-                                          color: COLOR_WHITE),
-                                    ),
-                                  ),
-                                  width: 100),
-                              GridColumn(
-                                  columnName: 'Operatorname1',
-                                  label: Container(
-                                    color: COLOR_BLUE_DARK,
-                                    child: Center(
-                                      child: Label('Operatorname1',
-                                          color: COLOR_WHITE),
-                                    ),
-                                  ),
-                                  width: 100),
-                              GridColumn(
-                                  columnName: 'Operatorname2',
-                                  label: Container(
-                                    color: COLOR_BLUE_DARK,
-                                    child: Center(
-                                      child: Label('Operatorname2',
-                                          color: COLOR_WHITE),
-                                    ),
-                                  ),
-                                  width: 100),
-                              GridColumn(
-                                columnName: 'Operatorname3',
+                                width: columnWidths['Operatorname']!,
+                                columnName: 'Operatorname',
                                 label: Container(
                                   color: COLOR_BLUE_DARK,
                                   child: Center(
-                                    child: Label('Operatorname3',
+                                    child: Label('Operatorname',
                                         color: COLOR_WHITE),
                                   ),
                                 ),
                               ),
                               GridColumn(
+                                width: columnWidths['RejectQTY']!,
+                                columnName: 'RejectQTY',
+                                label: Container(
+                                  color: COLOR_BLUE_DARK,
+                                  child: Center(
+                                    child:
+                                        Label('RejectQTY', color: COLOR_WHITE),
+                                  ),
+                                ),
+                              ),
+                              GridColumn(
+                                width: columnWidths['BatchNO']!,
                                 columnName: 'BatchNO',
                                 label: Container(
                                   color: COLOR_BLUE_DARK,
                                   child: Center(
-                                    child: Label('Batch/Serial',
+                                    child: Label('BatchNO', color: COLOR_WHITE),
+                                  ),
+                                ),
+                              ),
+                              GridColumn(
+                                width: columnWidths['FinDate']!,
+                                columnName: 'FinDate',
+                                label: Container(
+                                  color: COLOR_BLUE_DARK,
+                                  child: Center(
+                                    child: Label('Finish Date',
                                         color: COLOR_WHITE),
                                   ),
                                 ),
@@ -205,93 +351,73 @@ class _ProcessFinishHoldScreenState extends State<ProcessFinishHoldScreen> {
                       )
                     : CircularProgressIndicator(),
                 const SizedBox(height: 20),
-                processModelSqlite != null
+                _index.isNotEmpty
                     ? Expanded(
-                        child: Container(
-                            child: ListView(
-                          children: [
-                            DataTable(
-                                horizontalMargin: 20,
-                                headingRowHeight: 30,
-                                dataRowHeight: 30,
-                                headingRowColor: MaterialStateColor.resolveWith(
-                                    (states) => COLOR_BLUE_DARK),
-                                border: TableBorder.all(
-                                  width: 1.0,
-                                  color: COLOR_BLACK,
-                                ),
-                                columns: [
-                                  DataColumn(
-                                    numeric: true,
-                                    label: Label(
-                                      "",
-                                      color: COLOR_BLUE_DARK,
-                                    ),
-                                  ),
-                                  DataColumn(label: Label(""))
-                                ],
-                                rows: [
-                                  DataRow(cells: [
-                                    DataCell(Center(child: Label("Machine"))),
-                                    DataCell(Label(
-                                        "${processList![selectedRowIndex!].MACHINE}"))
-                                  ]),
-                                  DataRow(cells: [
-                                    DataCell(
-                                        Center(child: Label("Operator Name"))),
-                                    DataCell(Label(
-                                        "${processList![selectedRowIndex!].OPERATOR_NAME}"))
-                                  ]),
-                                  DataRow(cells: [
-                                    DataCell(
-                                        Center(child: Label("Operator Name1"))),
-                                    DataCell(Label(
-                                        "${processList![selectedRowIndex!].OPERATOR_NAME1}"))
-                                  ]),
-                                  DataRow(cells: [
-                                    DataCell(
-                                        Center(child: Label("Operator Name2"))),
-                                    DataCell(Label(
-                                        "${processList![selectedRowIndex!].OPERATOR_NAME2}"))
-                                  ]),
-                                  DataRow(cells: [
-                                    DataCell(
-                                        Center(child: Label("Operator Name3"))),
-                                    DataCell(Label(
-                                        "${processList![selectedRowIndex!].OPERATOR_NAME3}"))
-                                  ]),
-                                  DataRow(cells: [
-                                    DataCell(Center(
-                                        child: Label("Batch/Serial No."))),
-                                    DataCell(Label(
-                                        "${processList![selectedRowIndex!].BATCH_NO}"))
-                                  ]),
-                                ])
-                          ],
-                        )),
-                      )
-                    : Expanded(
-                        child: Container(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Label(
-                                "No data",
-                                color: COLOR_RED,
-                                fontSize: 30,
+                        child: ListView.builder(
+                          itemCount: 1,
+                          itemBuilder: ((context, index) {
+                            return DataTable(
+                              horizontalMargin: 20,
+                              headingRowHeight: 30,
+                              dataRowHeight: 30,
+                              headingRowColor: MaterialStateColor.resolveWith(
+                                  (states) => COLOR_BLUE_DARK),
+                              border: TableBorder.all(
+                                width: 1.0,
+                                color: COLOR_BLACK,
                               ),
-                              CircularProgressIndicator()
-                            ],
-                          ),
+                              columns: [
+                                DataColumn(
+                                  numeric: true,
+                                  label: Label(
+                                    "",
+                                    color: COLOR_BLUE_DARK,
+                                  ),
+                                ),
+                                DataColumn(label: Label(""))
+                              ],
+                              rows: [
+                                DataRow(cells: [
+                                  DataCell(Center(child: Label("Machine No."))),
+                                  DataCell(Label(
+                                      "${processList.where((element) => element.ID == _index.first).first.MACHINE}"))
+                                ]),
+                                DataRow(cells: [
+                                  DataCell(
+                                      Center(child: Label("Operator Name"))),
+                                  DataCell(Label(
+                                      "${processList.where((element) => element.ID == _index.first).first.OPERATOR_NAME}"))
+                                ]),
+                                DataRow(cells: [
+                                  DataCell(Center(child: Label("RejectQTY"))),
+                                  DataCell(Label(
+                                      "${processList.where((element) => element.ID == _index.first).first.GARBAGE}"))
+                                ]),
+                                DataRow(cells: [
+                                  DataCell(
+                                      Center(child: Label("Batch/Serial No."))),
+                                  DataCell(Label(
+                                      "${processList.where((element) => element.ID == _index.first).first.BATCH_NO}"))
+                                ]),
+                                DataRow(cells: [
+                                  DataCell(Center(child: Label("Finish Date"))),
+                                  DataCell(Label(
+                                      "${processList.where((element) => element.ID == _index.first).first.FINDATE}"))
+                                ]),
+                              ],
+                            );
+                          }),
                         ),
-                      ),
-                const SizedBox(height: 20),
+                      )
+                    :
+                    // CircularProgressIndicator(),
+                    SizedBox(height: 20),
                 Row(
                   children: [
                     Expanded(
                         child: Button(
                       onPress: () {
-                        if (processModelSqlite != null) {
+                        if (_index.isNotEmpty) {
                           _AlertDialog();
                         } else {
                           EasyLoading.showInfo("Please Select Data");
@@ -309,27 +435,8 @@ class _ProcessFinishHoldScreenState extends State<ProcessFinishHoldScreen> {
                       text: Label("Send", color: COLOR_WHITE),
                       bgColor: _colorSend,
                       onPress: () {
-                        if (processModelSqlite != null) {
-                          // BlocProvider.of<LineElementBloc>(context).add(
-                          //   ProcessInputEvent(
-                          //     ProcessOutputModel(
-                          //       MACHINE:
-                          //           processList![selectedRowIndex!].MACHINE,
-                          //       OPERATORNAME: int.tryParse(processList![selectedRowIndex!]
-                          //           .OPERATOR_NAME.toString()),
-                          //       OPERATORNAME1: int.tryParse(processList![selectedRowIndex!]
-                          //           .OPERATOR_NAME1.toString()),
-                          //       OPERATORNAME2: int.tryParse(processList![selectedRowIndex!]
-                          //           .OPERATOR_NAME2.toString()),
-                          //       OPERATORNAME3: int.tryParse(processList![selectedRowIndex!]
-                          //           .OPERATOR_NAME3.toString()),
-                          //       BATCHNO:
-                          //           processList![selectedRowIndex!]
-                          //               .BATCH_NO
-                          //               .toString()),
-                          //     ),
-                          //   ),
-                          // );
+                        if (_index.isNotEmpty) {
+                          _sendDataServer();
                         } else {
                           EasyLoading.showInfo("Please Select Data");
                         }
@@ -343,18 +450,52 @@ class _ProcessFinishHoldScreenState extends State<ProcessFinishHoldScreen> {
         ));
   }
 
+  _sendDataServer() {
+    _index.forEach((element) async {
+      var row = processList.where((value) => value.ID == element).first;
+
+      BlocProvider.of<LineElementBloc>(context).add(
+        ProcessFinishInputEvent(ProcessFinishOutputModel(
+          MACHINE: row.MACHINE,
+          OPERATORNAME: int.tryParse(row.OPERATOR_NAME.toString()),
+          REJECTQTY: row.GARBAGE.toString(),
+          BATCHNO: int.tryParse(row.BATCH_NO.toString()),
+          FINISHDATE: row.FINDATE.toString(),
+        )),
+      );
+    });
+  }
+
+  // void _sendDataServer() async {
+  //   _index.forEach((element) async {
+  //     var row = processList.where((value) => value.ID == element).first;
+  //     BlocProvider.of<LineElementBloc>(context).add(
+  //       ProcessFinishInputEvent(
+  //         ProcessFinishOutputModel(
+  //           MACHINE: row.MACHINE,
+  //           OPERATORNAME: int.tryParse(row.OPERATOR_NAME.toString()),
+  //           REJECTQTY: row.GARBAGE.toString(),
+  //           BATCHNO: int.tryParse(row.BATCH_NO.toString()),
+  //           FINISHDATE: row.STARTDATE.toString(),
+  //         ),
+  //       ),
+  //     );
+  //   });
+  // }
+
   void _AlertDialog() async {
     // EasyLoading.showError("Error[03]", duration: Duration(seconds: 5));//if password
     showDialog<String>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
         // title: const Text('AlertDialog Title'),
-        content: TextFormField(
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            labelText: 'Please Input Password',
-          ),
-          controller: _passwordController,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: Label("Do you want Delete"),
+            ),
+          ],
         ),
 
         actions: <Widget>[
@@ -363,16 +504,12 @@ class _ProcessFinishHoldScreenState extends State<ProcessFinishHoldScreen> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
-              if (_passwordController.text.trim().length > 6) {
-                deletedInfo();
-
-                Navigator.pop(context);
-                Navigator.pop(context);
-                EasyLoading.showSuccess("Delete Success");
-              } else {
-                EasyLoading.showError("Please Input Password");
-              }
+            onPressed: () async {
+              Navigator.pop(context);
+              await deletedInfo();
+              await _refreshPage();
+              await _getHold();
+              EasyLoading.showSuccess("Delete Success");
             },
             child: const Text('OK'),
           ),
@@ -382,25 +519,24 @@ class _ProcessFinishHoldScreenState extends State<ProcessFinishHoldScreen> {
   }
 }
 
-class ProcessFinishDataSource extends DataGridSource {
-  ProcessFinishDataSource({List<ProcessModel>? process}) {
+class ProcessStartDataSource extends DataGridSource {
+  ProcessStartDataSource({List<ProcessModel>? process}) {
     if (process != null) {
       for (var _item in process) {
         _employees.add(
           DataGridRow(
             cells: [
+              DataGridCell<int>(columnName: 'ID', value: _item.ID),
               DataGridCell<String>(columnName: 'Machine', value: _item.MACHINE),
               DataGridCell<String>(
                   columnName: 'Operatorname', value: _item.OPERATOR_NAME),
               DataGridCell<String>(
-                  columnName: 'Operatorname1', value: _item.OPERATOR_NAME1),
-              DataGridCell<String>(
-                  columnName: 'Operatorname2', value: _item.OPERATOR_NAME2),
-              DataGridCell<String>(
-                  columnName: 'Operatorname3', value: _item.OPERATOR_NAME3),
+                  columnName: 'RejectQTY', value: _item.GARBAGE),
               DataGridCell<int>(
                   columnName: 'BatchNO',
                   value: int.tryParse(_item.BATCH_NO.toString())),
+              DataGridCell<String>(
+                  columnName: 'FinDate', value: _item.FINDATE.toString()),
             ],
           ),
         );

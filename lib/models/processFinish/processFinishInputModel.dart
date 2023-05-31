@@ -1,7 +1,6 @@
 class ProcessFinishInputModel {
-  const ProcessFinishInputModel({this.MESSAGE, this.RESULT, this.BATCHNO});
+  const ProcessFinishInputModel({this.MESSAGE, this.RESULT});
 
-  final String? BATCHNO;
   final bool? RESULT;
   final String? MESSAGE;
 
@@ -9,9 +8,24 @@ class ProcessFinishInputModel {
 
   static ProcessFinishInputModel fromJson(dynamic json) {
     return ProcessFinishInputModel(
-      BATCHNO: json['batchNo'],
       RESULT: json['result'],
       MESSAGE: json['message'],
     );
   }
 }
+
+// class ProcessInputModel {
+//   const ProcessInputModel({this.MESSAGE, this.RESULT});
+//
+//   final bool? RESULT;
+//   final String? MESSAGE;
+//
+//   List<Object> get props => [RESULT!, MESSAGE!];
+//
+//   static ProcessInputModel fromJson(dynamic json) {
+//     return ProcessInputModel(
+//       RESULT: json['result'],
+//       MESSAGE: json['message'],
+//     );
+//   }
+// }

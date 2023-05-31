@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:hitachi/blocs/zincthickness/zinc_thickness_bloc.dart';
+import 'package:hitachi/config.dart';
 import 'package:hitachi/helper/background/bg_white.dart';
 import 'package:hitachi/helper/button/Button.dart';
 import 'package:hitachi/helper/colors/colors.dart';
@@ -13,7 +14,8 @@ import 'package:hitachi/services/databaseHelper.dart';
 import 'package:intl/intl.dart';
 
 class ZincThickNessScanScreen extends StatefulWidget {
-  const ZincThickNessScanScreen({super.key});
+  ZincThickNessScanScreen({super.key, this.onChange});
+  ValueChanged<List<Map<String, dynamic>>>? onChange;
 
   @override
   State<ZincThickNessScanScreen> createState() =>
@@ -42,6 +44,7 @@ class _ZincThickNessScanScreenState extends State<ZincThickNessScanScreen> {
   final f8 = FocusNode();
   final f9 = FocusNode();
   final f10 = FocusNode();
+  final batchFocus = FocusNode();
   //
 
   Color t1 = Colors.black;
@@ -55,29 +58,11 @@ class _ZincThickNessScanScreenState extends State<ZincThickNessScanScreen> {
 
   Color bgButton = Colors.grey;
   String? dateTime;
-  // void _getDataZincThickness({String? batch}) async {
-  //   try {
-  //     var sql = databaseHelper.fetchZincThickness(batch: batch);
-  //   } catch (e, s) {
-  //     EasyLoading.showError("Can not Save");
-  //   }
-  // }
 
-  void _txtBatch() async {
-    var sql = await databaseHelper.fetchZincThickness(
-        batch: _batchController.text.trim());
-    if (sql.length > 0) {
-      setState(() {
-        _thickness1Controller.text = sql[0]['Thickness1'].toString();
-        _thickness2Controller.text = sql[0]['Thickness2'].toString();
-        _thickness3Controller.text = sql[0]['Thickness3'].toString();
-        _thickness4Controller.text = sql[0]['Thickness4'].toString();
-        _thickness6Controller.text = sql[0]['Thickness6'].toString();
-        _thickness7Controller.text = sql[0]['Thickness7'].toString();
-        _thickness8Controller.text = sql[0]['Thickness8'].toString();
-        _thickness9Controller.text = sql[0]['Thickness9'].toString();
-      });
-    }
+  void initState() {
+    batchFocus.requestFocus();
+    _getHold().then((value) => null);
+    super.initState();
   }
 
   void _callApi() {
@@ -101,7 +86,6 @@ class _ZincThickNessScanScreenState extends State<ZincThickNessScanScreen> {
     });
     BlocProvider.of<ZincThicknessBloc>(context).add(
       ZincThickNessSendEvent(ZincThicknessOutputModel(
-// OPERATORNAME:int.tryParse(_)
           BATCHNO: _batchController.text.trim(),
           THICKNESS1: th1,
           THICKNESS2: th2,
@@ -111,7 +95,9 @@ class _ZincThickNessScanScreenState extends State<ZincThickNessScanScreen> {
           THICKNESS7: th7,
           THICKNESS8: th8,
           THICKNESS9: th9,
-          STARTDATE: DateTime.now().toString())),
+          STARTDATE: DateFormat('yyyy-MMM-dd HH:mm:ss')
+              .format(DateTime.now())
+              .toString())),
     );
   }
 
@@ -128,20 +114,49 @@ class _ZincThickNessScanScreenState extends State<ZincThickNessScanScreen> {
       if (t1 == COLOR_RED ||
           t2 == COLOR_RED ||
           t3 == COLOR_RED ||
-          t4 == COLOR_RED ||
-          t6 == COLOR_RED ||
+          t4 == COLOR_RED) {
+        _AlertDialog(text: "Please enter value thinkness 1-4 between 20-45");
+      } else if (t6 == COLOR_RED ||
           t7 == COLOR_RED ||
           t8 == COLOR_RED ||
           t9 == COLOR_RED) {
-        _AlertDialog();
+        _AlertDialog(text: "Please enter value thinkness 6-9 between 45-70");
+      } else {
+        convertValuesToDecimal();
       }
     } else {
-      EasyLoading.showError("Please Input Info");
+      EasyLoading.showError("Please Batch 12 digits");
     }
   }
 
-  void _insertSqlite() async {
+  Future _insertSqlite() async {
     var sql = await databaseHelper.queryAllRows('ZINCTHICKNESS_SHEET');
+    String? th1;
+    String? th2;
+    String? th3;
+    String? th4;
+    String? th6;
+    String? th7;
+    String? th8;
+    String? th9;
+    setState(() {
+      th1 = convertToDecimal(_thickness1Controller.text.trim()).toString();
+      th2 = convertToDecimal(_thickness2Controller.text.trim()).toString();
+      th3 = convertToDecimal(_thickness3Controller.text.trim()).toString();
+      th4 = convertToDecimal(_thickness4Controller.text.trim()).toString();
+      th6 = convertToDecimal(_thickness6Controller.text.trim()).toString();
+      th7 = convertToDecimal(_thickness7Controller.text.trim()).toString();
+      th8 = convertToDecimal(_thickness8Controller.text.trim()).toString();
+      th9 = convertToDecimal(_thickness9Controller.text.trim()).toString();
+    });
+    print(_thickness1Controller.text);
+    print(_thickness2Controller.text);
+    print(_thickness3Controller.text);
+    print(_thickness4Controller.text);
+    print(_thickness6Controller.text);
+    print(_thickness7Controller.text);
+    print(_thickness8Controller.text);
+    print(_thickness9Controller.text);
     bool found = false;
     var items;
     for (items in sql) {
@@ -155,59 +170,55 @@ class _ZincThickNessScanScreenState extends State<ZincThickNessScanScreen> {
       await databaseHelper.updateSqlite(
         'ZINCTHICKNESS_SHEET',
         {
-          'Thickness1': _thickness1Controller.text.trim(),
-          'Thickness2': _thickness2Controller.text.trim(),
-          'Thickness3': _thickness3Controller.text.trim(),
-          'Thickness4': _thickness4Controller.text.trim(),
-          'Thickness6': _thickness6Controller.text.trim(),
-          'Thickness7': _thickness7Controller.text.trim(),
-          'Thickness8': _thickness8Controller.text.trim(),
-          'Thickness9': _thickness9Controller.text.trim(),
+          'Thickness1': th1,
+          'Thickness2': th2,
+          'Thickness3': th3,
+          'Thickness4': th4,
+          'Thickness6': th6,
+          'Thickness7': th7,
+          'Thickness8': th8,
+          'Thickness9': th9,
         },
         'Batch = ?',
         [_batchController.text.trim()],
-      ); // ทำอย่างไรก็ตามเมื่อพบค่าที่ตรงกัน
-      _thickness1Controller.clear();
-      _thickness2Controller.clear();
-      _thickness3Controller.clear();
-      _thickness4Controller.clear();
-      _thickness6Controller.clear();
-      _thickness7Controller.clear();
-      _thickness8Controller.clear();
-      _thickness9Controller.clear();
+      );
+
+      f1.requestFocus();
       print("isUpdate");
     } else {
       print("isNotUpdate");
       await databaseHelper.insertSqlite('ZINCTHICKNESS_SHEET', {
         'Batch': _batchController.text.trim(),
-        'Thickness1': _thickness1Controller.text.trim(),
-        'Thickness2': _thickness2Controller.text.trim(),
-        'Thickness3': _thickness3Controller.text.trim(),
-        'Thickness4': _thickness4Controller.text.trim(),
-        'Thickness6': _thickness6Controller.text.trim(),
-        'Thickness7': _thickness7Controller.text.trim(),
-        'Thickness8': _thickness8Controller.text.trim(),
-        'Thickness9': _thickness9Controller.text.trim(),
-        'DateData': DateFormat('dd MMM yyyy HH:mm').format(DateTime.now()),
+        'Thickness1': th1,
+        'Thickness2': th2,
+        'Thickness3': th3,
+        'Thickness4': th4,
+        'Thickness6': th6,
+        'Thickness7': th7,
+        'Thickness8': th8,
+        'Thickness9': th9,
+        'DateData': DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
       });
-      _thickness1Controller.clear();
-      _thickness2Controller.clear();
-      _thickness3Controller.clear();
-      _thickness4Controller.clear();
-      _thickness6Controller.clear();
-      _thickness7Controller.clear();
-      _thickness8Controller.clear();
-      _thickness9Controller.clear();
+
+      f1.requestFocus();
     }
   }
 
   double convertToDecimal(String value) {
     double numericValue = double.parse(value);
-    return numericValue / 10;
+    return numericValue / 100;
   }
 
   void convertValuesToDecimal() {
     _callApi();
+  }
+
+  Future<void> _getHold() async {
+    List<Map<String, dynamic>> sql =
+        await databaseHelper.queryAllRows('ZINCTHICKNESS_SHEET');
+    setState(() {
+      widget.onChange?.call(sql);
+    });
   }
 
   @override
@@ -215,7 +226,7 @@ class _ZincThickNessScanScreenState extends State<ZincThickNessScanScreen> {
     return MultiBlocListener(
       listeners: [
         BlocListener<ZincThicknessBloc, ZincThicknessState>(
-          listener: (context, state) {
+          listener: (context, state) async {
             if (state is ZincThicknessLoadingState) {
               EasyLoading.show(status: "Loading...");
             } else if (state is ZincThicknessLoadedState) {
@@ -223,22 +234,55 @@ class _ZincThickNessScanScreenState extends State<ZincThickNessScanScreen> {
 
               if (state.item.RESULT == true) {
                 f1.requestFocus();
-                _insertSqlite();
-
+                await _insertSqlite();
+                _thickness1Controller.clear();
+                _thickness2Controller.clear();
+                _thickness3Controller.clear();
+                _thickness4Controller.clear();
+                _thickness6Controller.clear();
+                _thickness7Controller.clear();
+                _thickness8Controller.clear();
+                _thickness9Controller.clear();
                 setState(() {
                   bgButton = Colors.grey;
                 });
-                EasyLoading.showSuccess("Send complete",
+                EasyLoading.showSuccess("${state.item.MESSAGE}",
                     duration: Duration(seconds: 3));
               } else if (state.item.RESULT == false) {
-                EasyLoading.showError("Failed To Send");
-                _insertSqlite();
+                _errorDialog(
+                    text: Label("${state.item.MESSAGE}"),
+                    onpressOk: () async {
+                      Navigator.pop(context);
+                      await _insertSqlite();
+                      await _getHold();
+                      _thickness1Controller.clear();
+                      _thickness2Controller.clear();
+                      _thickness3Controller.clear();
+                      _thickness4Controller.clear();
+                      _thickness6Controller.clear();
+                      _thickness7Controller.clear();
+                      _thickness8Controller.clear();
+                      _thickness9Controller.clear();
+                    });
               }
             }
             if (state is ZincThicknessErrorState) {
               EasyLoading.dismiss();
-              EasyLoading.showError("Check connection & Save Complete");
-              _insertSqlite();
+              _errorDialog(
+                  text: Label("Check Connection & Save"),
+                  onpressOk: () async {
+                    Navigator.pop(context);
+                    await _insertSqlite();
+                    await _getHold();
+                    _thickness1Controller.clear();
+                    _thickness2Controller.clear();
+                    _thickness3Controller.clear();
+                    _thickness4Controller.clear();
+                    _thickness6Controller.clear();
+                    _thickness7Controller.clear();
+                    _thickness8Controller.clear();
+                    _thickness9Controller.clear();
+                  });
             }
           },
         )
@@ -255,6 +299,7 @@ class _ZincThickNessScanScreenState extends State<ZincThickNessScanScreen> {
                     labelText: "Batch No. :",
                     controller: _batchController,
                     maxLength: 12,
+                    focusNode: batchFocus,
                     onEditingComplete: () {
                       if (_batchController.text.length == 12) {
                         _getZincthicknessInSqlite();
@@ -554,7 +599,7 @@ class _ZincThickNessScanScreenState extends State<ZincThickNessScanScreen> {
                                   _thickness7Controller.text.isNotEmpty &&
                                   _thickness8Controller.text.isNotEmpty &&
                                   _thickness9Controller.text.isNotEmpty) {
-                                bgButton = COLOR_SUCESS;
+                                bgButton = COLOR_BLUE_DARK;
                               } else {
                                 bgButton = Colors.grey;
                               }
@@ -629,14 +674,22 @@ class _ZincThickNessScanScreenState extends State<ZincThickNessScanScreen> {
           if (_batchController.text.trim() == items['Batch'].trim()) {
             found = true;
             setState(() {
-              _thickness1Controller.text = items['Thickness1'];
-              _thickness2Controller.text = items['Thickness2'];
-              _thickness3Controller.text = items['Thickness3'];
-              _thickness4Controller.text = items['Thickness4'];
-              _thickness6Controller.text = items['Thickness6'];
-              _thickness7Controller.text = items['Thickness7'];
-              _thickness8Controller.text = items['Thickness8'];
-              _thickness9Controller.text = items['Thickness9'];
+              _thickness1Controller.text =
+                  (double.parse(items['Thickness1']) * 100).toInt().toString();
+              _thickness2Controller.text =
+                  (double.parse(items['Thickness2']) * 100).toInt().toString();
+              _thickness3Controller.text =
+                  (double.parse(items['Thickness3']) * 100).toInt().toString();
+              _thickness4Controller.text =
+                  (double.parse(items['Thickness4']) * 100).toInt().toString();
+              _thickness6Controller.text =
+                  (double.parse(items['Thickness6']) * 100).toInt().toString();
+              _thickness7Controller.text =
+                  (double.parse(items['Thickness7']) * 100).toInt().toString();
+              _thickness8Controller.text =
+                  (double.parse(items['Thickness8']) * 100).toInt().toString();
+              _thickness9Controller.text =
+                  (double.parse(items['Thickness9']) * 100).toInt().toString();
               dateTime = items['DateData'];
             });
             break;
@@ -701,21 +754,21 @@ class _ZincThickNessScanScreenState extends State<ZincThickNessScanScreen> {
             } else {
               t9 = COLOR_BLACK;
             }
-            bgButton = COLOR_SUCESS;
+            bgButton = COLOR_BLUE_DARK;
           });
 
           // ทำอย่างไรก็ตามเมื่อพบค่าที่ตรงกัน
         } else {
-          EasyLoading.showError("Data not Found");
           setState(() {
-            _thickness1Controller.text = '';
-            _thickness2Controller.text = '';
-            _thickness3Controller.text = '';
-            _thickness4Controller.text = '';
-            _thickness6Controller.text = '';
-            _thickness7Controller.text = '';
-            _thickness8Controller.text = '';
-            _thickness9Controller.text = '';
+            _thickness1Controller.clear();
+            _thickness2Controller.clear();
+            _thickness3Controller.clear();
+            _thickness4Controller.clear();
+            _thickness6Controller.clear();
+            _thickness7Controller.clear();
+            _thickness8Controller.clear();
+            _thickness9Controller.clear();
+            print("Clear");
             bgButton = Colors.grey;
           });
         }
@@ -727,7 +780,7 @@ class _ZincThickNessScanScreenState extends State<ZincThickNessScanScreen> {
     }
   }
 
-  void _AlertDialog() async {
+  void _AlertDialog({String? text}) async {
     // EasyLoading.showError("Error[03]", duration: Duration(seconds: 5));//if password
     showDialog<String>(
       context: context,
@@ -735,9 +788,13 @@ class _ZincThickNessScanScreenState extends State<ZincThickNessScanScreen> {
         // title: const Text('AlertDialog Title'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
-              child: Label("Do you want Send "),
+              child: Label(
+                text ?? "",
+                color: COLOR_RED,
+              ),
             ),
           ],
         ),
@@ -752,8 +809,61 @@ class _ZincThickNessScanScreenState extends State<ZincThickNessScanScreen> {
               Navigator.pop(context);
               convertValuesToDecimal();
             },
-            child: const Text('OK'),
+            child: const Text('Send Now'),
           ),
+        ],
+      ),
+    );
+  }
+
+  void _errorDialog(
+      {Label? text,
+      Function? onpressOk,
+      Function? onpressCancel,
+      bool isHideCancle = true}) async {
+    // EasyLoading.showError("Error[03]", duration: Duration(seconds: 5));//if password
+    showDialog<String>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        // title: const Text('AlertDialog Title'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: text,
+            ),
+          ],
+        ),
+
+        actions: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Visibility(
+                visible: isHideCancle,
+                child: ElevatedButton(
+                  style: ButtonStyle(
+                      backgroundColor:
+                          MaterialStatePropertyAll(COLOR_BLUE_DARK)),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+              ),
+              Visibility(
+                visible: isHideCancle,
+                child: SizedBox(
+                  width: 15,
+                ),
+              ),
+              ElevatedButton(
+                style: ButtonStyle(
+                    backgroundColor: MaterialStatePropertyAll(COLOR_BLUE_DARK)),
+                onPressed: () => onpressOk?.call(),
+                child: const Text('OK'),
+              ),
+            ],
+          )
         ],
       ),
     );
